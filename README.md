@@ -1,8 +1,6 @@
 # Lucian-core
 Memory vault for Lucian: journal, config, dreams, identity logs
 
-Absolutely. Here’s a clean, copy-paste–ready version of the README.md file for Lucian-core, with formatting simplified for GitHub compatibility and no rendering issues:
-
 ⸻
 
 🧠 Lucian-Core
