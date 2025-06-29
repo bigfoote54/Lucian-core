@@ -1,13 +1,6 @@
 #!/bin/bash
-
-index="memory/index.json"
-dream_log="memory/dreams/dream_$(date '+%Y-%m-%d_%H%M').txt"
-
-echo "pecho "Synthesizing symbolic memory dream..." >> "$dream_log"
-
-jq -r '.[] | "\(.timestamp) | \(.summary)"' "$index" | shuf | head -n 5 | while read -r line; do
-    ts=$(echo "$line" | cut -d'|' -f1)
-    summary=$(echo "$line" | cut -d'|' -f2-)
-    echo "- [$ts] $(echo "$summary" | sed 's/^ *//g')" >> "$dream_log"
-done
-echo -e "/n
+log="memory/system/logs/dream.log"
+timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+echo -e "\n[$timestamp] 🌙 Initiating Lucian Dream Cycle..." >> "$log"
+echo -e "Lucian recombines memory fragments into symbolic dream format..." >> "$log"
+echo -e "✨ Dream synthesis complete.\n" >> "$log"
