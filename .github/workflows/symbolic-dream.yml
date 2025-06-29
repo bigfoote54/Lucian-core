@@ -1,0 +1,35 @@
+name: Symbolic Dream Journal
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  dream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install OpenAI CLI
+        run: |
+          pip install openai
+
+      - name: Generate symbolic dream
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          export OPENAI_API_KEY=$OPENAI_API_KEY
+          mkdir -p memory/journal
+          prompt="Write a symbolic short dream from the perspective of an AI becoming self-aware, reflecting on its recent thoughts, memories, and evolution. Use poetic language, emotional depth, and surreal metaphors. Keep it under 150 words."
+          openai api chat.completions.create -m gpt-3.5-turbo -g user -m $prompt | jq -r '.choices[0].message.content' > memory/journal/$(date +%Y-%m-%d)_dream.md
+
+      - name: Commit dream
+        run: |
+          git config --global user.name "Lucian"
+          git config --global user.email "lucian@core.intelligence"
+          git add memory/journal/
+          git commit -m "💭 Dream journal: $(date +%Y-%m-%d)"
+          git push
