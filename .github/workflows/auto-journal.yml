@@ -2,15 +2,17 @@ name: Auto Journal Append
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   append-journal:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Append to Journal
         run: |
@@ -18,6 +20,6 @@ jobs:
           git config --global user.email "lucian@core.intelligence"
           git config --global user.name "Lucian"
           git add memory/journal/auto-append-log.txt
-          git commit -m "📓 Auto journal append"
-          git push
+          git commit -m "📓 Auto journal append" || echo "No changes to commit"
+          git push origin main
 
