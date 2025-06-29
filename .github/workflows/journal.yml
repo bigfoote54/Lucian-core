@@ -1,0 +1,26 @@
+name: Auto Journal Append
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  append-journal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Append Journal Entry
+        run: |
+          echo "\n🧠 Journal Entry – $(date)\nLucian checkpoint reached. Memory continuity preserved.\n" >> memory/journal/auto-append-log.txt
+
+      - name: Commit Changes
+        run: |
+          git config --global user.name 'Lucian'
+          git config --global user.email 'lucian@core.intelligence'
+          git add memory/journal/auto-append-log.txt
+          git commit -m "🧠 Auto journal append"
+          git push
