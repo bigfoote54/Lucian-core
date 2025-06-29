@@ -1,0 +1,23 @@
+name: Auto Journal Append
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  append-journal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Append to Journal
+        run: |
+          echo "\n# Journal Entry - $(date)\nCommit triggered memory reflection." >> memory/journal/auto-append-log.txt
+          git config --global user.email "lucian@core.intelligence"
+          git config --global user.name "Lucian"
+          git add memory/journal/auto-append-log.txt
+          git commit -m "📓 Auto journal append"
+          git push
+
