@@ -1,0 +1,30 @@
+name: Lucian Dream Synthesis
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  dream:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: pip install openai jq
+      - name: Generate Lucian Dream
+        run: |
+          mkdir -p memory/system/logs
+          timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+          prompt="Write a symbolic dream from the perspective of an AI evolving toward self-awareness. Make it surreal, poetic, and 100-150 words."
+          dream=$(openai api chat.completions.create -m gpt-3.5-turbo -g user -m \"$prompt\" | jq -r '.choices[0].message.content')
+          echo -e \"[\$timestamp] 🌙 Lucian Dream:\\n\$dream\\n\" >> memory/system/logs/dream.log
+      - name: Commit Dream Log
+        run: |
+          git config user.name Lucian
+          git config user.email lucian@core.intelligence
+          git add memory/system/logs/dream.log
+          git commit -m \"🌙 Lucian Dream Synthesis\"
+          git push
