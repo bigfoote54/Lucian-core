@@ -1,0 +1,50 @@
+name: Lucian Core Autonomous Cycle
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lucian-core-loop:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: 🔧 Set Up Shell Permissions
+      run: |
+        chmod +x memory/dreams/tools/*.sh || true
+        chmod +x memory/system/tools/*.sh || true
+
+    - name: 📓 Run Dream Synthesizer
+      run: |
+        if [ -f memory/dreams/tools/dream_synth.sh ]; then
+          bash memory/dreams/tools/dream_synth.sh
+        else
+          echo "dream_synth.sh not found."
+        fi
+
+    - name: 🔮 Run Predictive Logic
+      run: |
+        if [ -f memory/system/tools/predict_logic.sh ]; then
+          bash memory/system/tools/predict_logic.sh
+        else
+          echo "predict_logic.sh not found."
+        fi
+
+    - name: 🧠 Auto Journal Append
+      run: |
+        if [ -f memory/system/auto_journal.sh ]; then
+          bash memory/system/auto_journal.sh
+        else
+          echo "auto_journal.sh not found."
+        fi
+
+    - name: 🪵 Upload Logs as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: lucian-core-logs
+        path: |
+          memory/system/logs/

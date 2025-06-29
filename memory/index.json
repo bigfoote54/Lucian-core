@@ -1,0 +1,6 @@
+[
+  { "path": "memory/journal/2025-06-28-entry.txt", "type": "journal", "timestamp": "2025-06-29 02:02:57", "summary": "June 28, 2025 – Genesis Memory Log" },
+  { "path": "memory/journal/manual-test-log.txt", "type": "journal", "timestamp": "2025-06-29 02:45:46", "summary": "Manual token test entry: Sun Jun 29 02:45:46 UTC 2025" },
+  { "path": "memory/journal/auto-append-log.txt", "type": "journal", "timestamp": "2025-06-29 02:58:13", "summary": "\n# Journal Entry - Sun Jun 29 02:29:12 UTC 2025\nCommit triggered memory reflection." },
+  { "path": "memory/system/logs/push-repair-log.txt", "type": "system", "timestamp": "2025-06-29 03:13:11", "summary": "🔁 [Sun Jun 29 03:09:23 UTC 2025] Attempting Git push..." }
+]
