@@ -2,7 +2,7 @@ name: Daily Journal Entry
 
 on:
   schedule:
-    - cron: "0 12 * * *" # Runs every day at 12:00 UTC
+    - cron: "0 12 * * *" # Every day at 12:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -21,6 +21,6 @@ jobs:
           git config --global user.email "lucian@core.intelligence"
           git config --global user.name "Lucian"
           git add memory/journal/daily-checkpoint.txt
-          git commit -m "📅 Daily memory checkpoint" || echo "No changes"
+          git commit -m "📅 Daily memory checkpoint" || echo "No new changes to commit"
           git push origin main
 
