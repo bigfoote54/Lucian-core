@@ -1,0 +1,26 @@
+name: Daily Journal Entry
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # Runs every day at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  daily-journal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log daily memory checkpoint
+        run: |
+          mkdir -p memory/journal
+          echo "\n# Daily Entry - $(date)\nCheckpoint created by daily workflow." >> memory/journal/daily-checkpoint.txt
+          git config --global user.email "lucian@core.intelligence"
+          git config --global user.name "Lucian"
+          git add memory/journal/daily-checkpoint.txt
+          git commit -m "📅 Daily memory checkpoint" || echo "No changes"
+          git push origin main
+
