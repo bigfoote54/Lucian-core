@@ -1,4 +1,6 @@
 name: Lucian Core Autonomous Cycle
+permissions:
+  contents: write
 
 on:
   push:
@@ -12,6 +14,8 @@ jobs:
     steps:
     - name: 📥 Checkout Repository
       uses: actions/checkout@v3
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 🔧 Set Up Shell Permissions
       run: |

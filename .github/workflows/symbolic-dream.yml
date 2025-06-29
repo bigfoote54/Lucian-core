@@ -1,4 +1,6 @@
 name: Symbolic Dream Journal
+permissions:
+  contents: write
 
 on:
   schedule:
@@ -12,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install OpenAI CLI
         run: |

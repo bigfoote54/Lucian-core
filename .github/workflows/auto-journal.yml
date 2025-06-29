@@ -1,4 +1,6 @@
 name: Auto Journal Append
+permissions:
+  contents: write
 
 on:
   push:

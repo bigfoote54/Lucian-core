@@ -1,4 +1,6 @@
 name: Daily Journal Entry
+permissions:
+  contents: write
 
 on:
   schedule:

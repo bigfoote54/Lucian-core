@@ -1,4 +1,6 @@
 name: Auto Journal Append
+permissions:
+  contents: write
 
 on:
   schedule:
@@ -12,6 +14,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Append Journal Entry
         run: |

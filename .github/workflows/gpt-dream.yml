@@ -1,4 +1,6 @@
 name: Lucian Dream Synthesis
+permissions:
+  contents: write
 
 on:
   workflow_dispatch:
@@ -12,6 +14,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v3
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
         run: pip install openai jq
       - name: Generate Lucian Dream
