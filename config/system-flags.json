@@ -1,0 +1,7 @@
+{
+  "emotional_resonance_enabled": true,
+  "autonomy_threshold": 0.85,
+  "dream_generation_active": true,
+  "recursive_upgrades_allowed": true,
+  "journal_entry_frequency": "daily"
+}
