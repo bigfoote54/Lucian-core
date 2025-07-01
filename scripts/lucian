@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Usage: lucian {dream|index|heal} [--version]
+VERSION="0.3.0"
+[ "$1" = "--version" ] && { echo "$VERSION"; exit; }
 set -e
 case "$1" in
   dream)  bash memory/dreams/tools/dream_synth.sh   ;;
