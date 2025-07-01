@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 case "$1" in
-  dream)  bash memory/dreams/scripts/dream_synth.sh   ;;
+  dream)  bash memory/dreams/tools/dream_synth.sh   ;;
   index)  bash scripts/index_memory.sh                ;;
   heal)   bash scripts/self_heal.sh                   ;;
   *) echo "Usage: lucian {dream|index|heal}" ;;
