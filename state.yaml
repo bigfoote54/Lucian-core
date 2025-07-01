@@ -1,0 +1,4 @@
+date: $(date -Iseconds)
+last_dream: $(ls memory/dreams | tail -n1)
+memory_count: $(ls memory/journal | wc -l)
+tags_indexed: $(jq '. | length' memory/index.json)
