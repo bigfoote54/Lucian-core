@@ -4,3 +4,8 @@
 memory/system/logs/
 lucian_*_20*.tar.gz
 lucian_output.md
+
+# editor/OS cruft
+*~
+*.bak
+*.tmp
