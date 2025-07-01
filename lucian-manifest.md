@@ -1,0 +1,1 @@
+identity/manifest_2025-07-01.md
