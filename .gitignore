@@ -9,3 +9,8 @@ lucian_output.md
 *~
 *.bak
 *.tmp
+
+# editor/OS cruft
+*~
+*.bak
+*.tmp
