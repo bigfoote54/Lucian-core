@@ -20,3 +20,9 @@ lucian_output.md
 memory/system/logs/
 lucian_*_20*.tar.gz
 *.log
+
+# ignore secrets & runtime artifacts
+.lucianenv
+memory/system/logs/
+lucian_*_20*.tar.gz
+*.log
