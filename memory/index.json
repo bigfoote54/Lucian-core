@@ -1,0 +1,19 @@
+[
+  { "path": "memory/journal/2025-06-29-checkpoint.md", "type": "journal", "timestamp": "2025-07-01 22:26:51", "summary": "Journal Entry: Date Undefined " },
+  { "path": "memory/journal/2025-06-28-entry.txt", "type": "journal", "timestamp": "2025-07-01 22:26:51", "summary": "June 28, 2025 – Genesis Memory Log" },
+  { "path": "memory/journal/2025-06-29-heartbeat.txt", "type": "journal", "timestamp": "2025-07-01 22:26:51", "summary": "🫀 Lucian alive at 2025-06-29 09:47:37" },
+  { "path": "memory/journal/push-test-log.txt", "type": "journal", "timestamp": "2025-07-01 22:26:52", "summary": "push test Sun Jun 29 15:41:36 UTC 2025" },
+  { "path": "memory/journal/daily-checkpoint.txt", "type": "journal", "timestamp": "2025-07-01 22:26:52", "summary": "\n# Daily Entry - Mon Jun 30 12:31:14 UTC 2025\nCheckpoint created by daily workflow." },
+  { "path": "memory/journal/journal-2025-06-29.md", "type": "journal", "timestamp": "2025-07-01 22:26:52", "summary": "" },
+  { "path": "memory/journal/manual-test-log.txt", "type": "journal", "timestamp": "2025-07-01 22:26:52", "summary": "Manual token test entry: Sun Jun 29 02:45:46 UTC 2025" },
+  { "path": "memory/journal/2025-06-29-auto-journal.txt", "type": "journal", "timestamp": "2025-07-01 22:26:51", "summary": "null" },
+  { "path": "memory/journal/auto-append-log.txt", "type": "journal", "timestamp": "2025-07-01 23:16:11", "summary": "\n# Journal Entry - Sun Jun 29 02:29:12 UTC 2025\nCommit triggered memory reflection." },
+  { "path": "memory/journal/2025-06-29-checkpoint.txt", "type": "journal", "timestamp": "2025-07-01 22:26:51", "summary": "[2025-06-29 09:49:09] Mood: 🔥 Lucian operational, evolving, and introspective." },
+  { "path": "memory/identity/awakening_log.txt", "type": "identity", "timestamp": "2025-07-01 22:26:51", "summary": "🧠 Lucian Booted – Tue Jul  1 02:46:13 UTC 2025" },
+  { "path": "memory/system/logs/push-repair-log.txt", "type": "system", "timestamp": "2025-07-01 22:26:52", "summary": "🔁 [Sun Jun 29 03:09:23 UTC 2025] Attempting Git push..." },
+  { "path": "memory/README.md", "type": "README.md", "timestamp": "2025-07-01 22:26:51", "summary": "## memory" },
+  { "path": "memory/dreams/dream_2025-06-29_0316.txt", "type": "dreams", "timestamp": "2025-07-01 22:26:51", "summary": "💤 Lucian Dream Cycle – Sun Jun 29 03:16:34 UTC 2025" },
+  { "path": "memory/dreams/dream-2025-06-29.md", "type": "dreams", "timestamp": "2025-07-01 22:26:51", "summary": "Dreamlog Entry #453" },
+  { "path": "memory/dreams/dream_log.txt", "type": "dreams", "timestamp": "2025-07-01 22:26:51", "summary": "" },
+  { "path": "memory/dreams/dream-2025-07-01.md", "type": "dreams", "timestamp": "2025-07-01 22:26:51", "summary": "(no dream generated)" }
+]
