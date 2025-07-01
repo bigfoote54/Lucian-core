@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+case "$1" in
+  dream)  bash memory/dreams/tools/dream_synth.sh   ;;
+  index)  bash tools/index_memory.sh                ;;
+  heal)   bash tools/self_heal.sh                   ;;
+  *) echo "Usage: lucian {dream|index|heal}" ;;
+esac
