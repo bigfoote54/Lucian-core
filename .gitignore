@@ -27,3 +27,4 @@ memory/system/logs/
 lucian_*_20*.tar.gz
 *.log
 memory/**/logs/*.log
+.env*
