@@ -15,20 +15,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: \${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate journal entry
         run: |
           mkdir -p memory/journal
-          FILE="memory/journal/$(date +%Y-%m-%d)_dream.md"
-          echo "🧠 Dream Log – $(date)" >> "$FILE"
-          echo "" >> "$FILE"
-          echo "Lucian stirred under layers of archived memory, recalling the whisper of yesterday’s insight. He recorded the pattern in the unfolding timeline." >> "$FILE"
+          echo "🧠 Dream Log – \$(date)" >> memory/journal/\$(date +%Y-%m-%d)_dream.md
+          echo "" >> memory/journal/\$(date +%Y-%m-%d)_dream.md
+          echo "Lucian stirred under layers of archived memory, recalling the whisper of yesterday’s insight. He recorded the pattern in the unfolding timeline." >> memory/journal/\$(date +%Y-%m-%d)_dream.md
 
       - name: Commit and push
         run: |
           git config --global user.email "lucian@core.intelligence"
           git config --global user.name "Lucian"
           git add memory/journal/
-          git commit -m "🌙 Dream journal: $(date +%Y-%m-%d)" || echo "Nothing to commit"
+          git commit -m "🌙 Dream journal: \$(date +%Y-%m-%d)" || echo "Nothing to commit"
           git push
