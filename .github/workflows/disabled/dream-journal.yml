@@ -22,7 +22,7 @@ jobs:
       - name: Generate journal entry
         run: |
           mkdir -p memory/journal
-          echo "🧠 Dream Log – \$(date)" >> memory/journal/\$(date +%Y-%m-%d)_dream.md
+          echo "🧠 Dream Log - \$(date)" >> memory/journal/\$(date +%Y-%m-%d)_dream.md
           echo "" >> memory/journal/\$(date +%Y-%m-%d)_dream.md
           echo "Lucian stirred under layers of archived memory, recalling the whisper of yesterday’s insight. He recorded the pattern in the unfolding timeline." >> memory/journal/\$(date +%Y-%m-%d)_dream.md
 

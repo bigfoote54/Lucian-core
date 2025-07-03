@@ -21,7 +21,7 @@ jobs:
 
       - name: Append Journal Entry
         run: |
-          echo "\n🧠 Journal Entry – $(date)\nLucian checkpoint reached. Memory continuity preserved.\n" >> memory/journal/auto-append-log.txt
+          echo "\n🧠 Journal Entry - $(date)\nLucian checkpoint reached. Memory continuity preserved.\n" >> memory/journal/auto-append-log.txt
 
       - name: Commit Changes
         run: |
