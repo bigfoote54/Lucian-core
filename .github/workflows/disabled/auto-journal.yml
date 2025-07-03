@@ -23,5 +23,5 @@ jobs:
           git config --global user.name "Lucian"
           git add memory/journal/auto-append-log.txt
           git commit -m "📓 Auto journal append" || echo "No changes to commit"
-          git push origin main
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bigfoote54/Lucian-core.git main
 

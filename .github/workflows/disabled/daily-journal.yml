@@ -24,5 +24,5 @@ jobs:
           git config --global user.name "Lucian"
           git add memory/journal/daily-checkpoint.txt
           git commit -m "📅 Daily memory checkpoint" || echo "No new changes to commit"
-          git push origin main
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bigfoote54/Lucian-core.git main
 
