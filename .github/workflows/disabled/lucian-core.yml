@@ -2,7 +2,7 @@ name: Lucian Core Autonomous Cycle
 permissions:
   contents: write
 
-# disabled on:
+on:
   push:
     branches: [ main ]
   workflow_dispatch:

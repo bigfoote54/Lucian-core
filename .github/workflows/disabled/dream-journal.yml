@@ -2,7 +2,7 @@ name: Dream Journal
 permissions:
   contents: write
 
-# disabled on:
+on:
   schedule:
     - cron: '0 5 * * *'
   workflow_dispatch:

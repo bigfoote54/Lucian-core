@@ -1,5 +1,5 @@
 name: shell-lint
-# disabled on: [push, pull_request]
+on: [push, pull_request]
 jobs:
   shfmt:
     runs-on: ubuntu-latest
