@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+    - name: Set up authenticated git remote
+      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
       - run: apk add --no-cache bash jq python3 py3-pip
       - run: pip3 install openai qdrant-client pytest
       - run: pytest --maxfail=1 --disable-warnings

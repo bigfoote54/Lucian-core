@@ -10,6 +10,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+    - name: Set up authenticated git remote
+      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Nightly dream & index
         run: |
           bash scripts/lucian dream    # create dream

@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: 📥 Checkout Repository
       uses: actions/checkout@v3
+    - name: Set up authenticated git remote
+      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
   with:
     token: ${{ secrets.GITHUB_TOKEN }}
 
