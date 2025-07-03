@@ -37,4 +37,4 @@ jobs:
           git config --global user.email "lucian@core.intelligence"
           git add memory/dreams/
           git commit -m "🧠 Archetypal Dream: \$(date +%Y-%m-%d)" || echo "No changes"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bigfoote54/Lucian-core.git main
