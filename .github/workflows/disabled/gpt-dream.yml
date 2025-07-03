@@ -2,7 +2,7 @@ name: Lucian Dream Synthesis
 permissions:
   contents: write
 
-on:
+# disabled on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * *'

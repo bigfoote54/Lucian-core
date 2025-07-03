@@ -2,7 +2,7 @@ name: Archetypal Dream Engine
 permissions:
   contents: write
 
-on:
+# disabled on:
   schedule:
     - cron: '0 5 * * *'
   workflow_dispatch:

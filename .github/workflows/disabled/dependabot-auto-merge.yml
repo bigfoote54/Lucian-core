@@ -1,5 +1,5 @@
 name: dependabot-auto-merge
-on: pull_request
+# disabled on: pull_request
 permissions: {contents: write, pull-requests: write}
 jobs:
   auto-merge:

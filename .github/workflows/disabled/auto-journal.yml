@@ -2,7 +2,7 @@ name: Auto Journal Append
 permissions:
   contents: write
 
-on:
+# disabled on:
   push:
     branches: [main]
   workflow_dispatch:

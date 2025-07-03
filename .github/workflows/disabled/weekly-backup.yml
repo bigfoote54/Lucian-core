@@ -1,5 +1,5 @@
 name: weekly-backup
-on:
+# disabled on:
   schedule:
     - cron: '0 0 * * SUN'   # every Sunday 00:00 UTC
 jobs:

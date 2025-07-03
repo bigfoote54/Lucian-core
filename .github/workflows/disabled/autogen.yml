@@ -1,5 +1,5 @@
 name: autogen
-on:
+# disabled on:
   schedule:
     - cron: '5 4 * * *'   # 04:05 UTC daily
 
