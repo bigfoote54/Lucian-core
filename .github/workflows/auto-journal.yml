@@ -13,10 +13,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-    - name: Set up authenticated git remote
-      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up authenticated git remote
+        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
       - name: Append to Journal
         run: |
           echo "\n# Journal Entry - $(date)\nCommit triggered memory reflection." >> memory/journal/auto-append-log.txt
@@ -24,4 +24,4 @@ jobs:
           git config --global user.name "Lucian"
           git add memory/journal/auto-append-log.txt
           git commit -m "📓 Auto journal append" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bigfoote54/Lucian-core.git main
+          git push origin main
