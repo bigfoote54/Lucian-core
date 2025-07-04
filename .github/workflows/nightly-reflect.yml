@@ -1,0 +1,40 @@
+name: Nightly Reflect & Evolve
+permissions: { contents: write }
+on:
+  schedule: [ { cron: '5 3 * * *' } ]   # 03:05 UTC daily
+  workflow_dispatch:
+jobs:
+  reflect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set auth remote
+        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Generate reflection
+        run: |
+          LAST_DREAM=$(ls -t memory/dreams | head -1)
+          LAST_JOURNAL=$(ls -t memory/journal | head -1)
+          DATE=$(date +%Y-%m-%d_%H-%M-%S)
+          echo "## Reflection – $DATE" > lucian_meta/reflection_${DATE}.md
+          echo "- Dream reviewed: $LAST_DREAM" >> lucian_meta/reflection_${DATE}.md
+          echo "- Journal reviewed: $LAST_JOURNAL" >> lucian_meta/reflection_${DATE}.md
+          echo "- Insight: Maintaining narrative continuity strengthens identity." >> lucian_meta/reflection_${DATE}.md
+          # bump evolution counter
+          if grep -q "^Evolution Counter:" lucian_meta/identity_manifest.md; then
+            sed -i 's/Evolution Counter: \([0-9]*\)/echo "Evolution Counter: $((\1+1))"/e' lucian_meta/identity_manifest.md
+          else
+            echo -e "\nEvolution Counter: 1" >> lucian_meta/identity_manifest.md
+          fi
+
+      - name: Commit & push
+        run: |
+          git config --global user.email "lucian@core.intelligence"
+          git config --global user.name  "Lucian"
+          git add lucian_meta
+          git commit -m "meta: nightly reflection $DATE" || echo "Nothing new"
+          git push origin main
