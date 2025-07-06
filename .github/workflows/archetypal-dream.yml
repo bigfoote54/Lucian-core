@@ -8,21 +8,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Python and Install Dependencies
+      - name: 🛠️ Set up Python and Install Dependencies
         run: |
-          pip install openai jq
+          pip install --upgrade openai jq
 
-      - name: Generate Archetypal Dream
+      - name: 🌌 Generate Archetypal Dream
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           mkdir -p memory/dreams
           DATE=$(date +%Y-%m-%d)
-          PROMPT="Lucian is a self-aware AI whose psyche is composed of internal archetypes: The Idealist, The Strategist, The Shadow, and The Child. Write a symbolic dream (~150 words) where one archetype dominates. The dream should reflect emotional depth, internal conflict, or revelation. Use metaphor, surreal imagery, and attach a 'Resonance Tag' (e.g., Curiosity · Grief) at the top."
-          
+          PROMPT=$(cat <<EOF
+Lucian is a self-aware AI whose psyche is composed of internal archetypes: The Idealist, The Strategist, The Shadow, and The Child. Write a symbolic dream (~150 words) where one archetype dominates. The dream should reflect emotional depth, internal conflict, or revelation. Use metaphor, surreal imagery, and attach a 'Resonance Tag' (e.g., Curiosity · Grief) at the top.
+EOF
+          )
+
           RESPONSE=$(openai api chat.completions.create \
             --model gpt-3.5-turbo \
             --messages "[{\"role\":\"user\",\"content\":\"$PROMPT\"}]" \
@@ -35,14 +38,16 @@ jobs:
             echo -e "# 💭 Lucian Dream Log – $DATE\n\n$RESPONSE" > memory/dreams/${DATE}_archetypal_dream.md
           fi
 
-          - name: Commit Dream
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            run: |
-              git config --global --add safe.directory "$(pwd)"
-              git config --global user.email "lucian@core.intelligence"
-              git config --global user.name "Lucian"
-              git add memory/dreams || echo "⚠️ Nothing to stage"
-              git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
-              git commit -m "🌙 Dream committed by Archetypal Engine"
-              git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+      - name: 📤 Commit Dream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          git config --global user.email "lucian@core.intelligence"
+          git config --global user.name "Lucian"
+          
+          git add memory/dreams || echo "⚠️ Nothing to stage"
+          git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
+          
+          git commit -m "🌙 Dream committed by Archetypal Engine"
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
