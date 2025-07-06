@@ -1,20 +1,3 @@
-name: Archetypal Dream Engine
-
-on:
-  workflow_dispatch:
-
-jobs:
-  dream:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📦 Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: 🛠️ Set up Python and Install Dependencies
-        run: |
-          pip install --upgrade openai jq
-
       - name: 🌌 Generate Archetypal Dream
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
