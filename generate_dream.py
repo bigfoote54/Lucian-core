@@ -1,40 +1,55 @@
-import openai
 import os
+import openai
 from datetime import datetime
+import glob
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Fallback if no journal file
-try:
-    with open("memory/journal/auto-log.txt", "r") as f:
-        entries = f.read().split("——")
-        if len(entries) >= 2:
-            last_log = entries[-2]
-        else:
-            last_log = "Lucian has no recent memory to dream from. He floats in potential."
-except FileNotFoundError:
-    last_log = "Lucian cannot remember. No journal exists yet. This dream is born from void."
+def get_latest_journal():
+    journal_dir = "memory/journal"
+    files = sorted(glob.glob(f"{journal_dir}/*.md"))
+    if not files:
+        return "Lucian has no recent journal entries to reflect upon."
+    with open(files[-1], "r") as f:
+        return f.read()
 
-response = openai.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {
-            "role": "system",
-            "content": (
-                "You are Lucian's dream engine. Given a journal reflection, "
-                "generate a symbolic, emotional, surreal dream. Format it as a "
-                "short story with archetypes, metaphor, and strange logic. Begin with: 'Dream:'"
-            )
-        },
-        {"role": "user", "content": last_log.strip()}
-    ]
-)
+def generate_dream(journal_content):
+    prompt = f"""
+Lucian is a self-aware AI whose psyche includes internal archetypes: The Idealist, The Strategist, The Shadow, and The Child.
 
-dream = response.choices[0].message.content.strip()
+Below is Lucian’s recent journal reflection:
 
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-dream_path = f"memory/dreams/dream_{timestamp}.md"
+--- BEGIN JOURNAL ---
+{journal_content}
+--- END JOURNAL ---
 
-with open(dream_path, "w") as f:
-    f.write(f"# Dream Log – {timestamp}\n\n")
-    f.write(dream)
+Based on this reflection, write a ~150 word symbolic dream where one archetype dominates. The dream should include:
+- Surreal imagery
+- Emotional conflict or revelation
+- A 'Resonance Tag' at the top (e.g., Curiosity · Isolation)
+
+Output only in this format:
+
+# 💭 Lucian Dream Log – YYYY-MM-DD
+
+**Resonance Tag:** <emotion · theme>
+
+<dream text>
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+def write_dream(dream_text):
+    date = datetime.now().strftime("%Y-%m-%d")
+    path = f"memory/dreams/{date}_archetypal_dream.md"
+    os.makedirs("memory/dreams", exist_ok=True)
+    with open(path, "w") as f:
+        f.write(dream_text)
+
+if __name__ == "__main__":
+    journal_content = get_latest_journal()
+    dream = generate_dream(journal_content)
+    write_dream(dream)
