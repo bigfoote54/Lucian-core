@@ -11,22 +11,31 @@ on:
 jobs:
   append-journal:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up authenticated git remote
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Dependencies
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bigfoote54/lucian-core.git
+          python -m pip install --upgrade pip
+          pip install openai
+
+      - name: Set up authenticated git remote
+        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Append to Journal
-        run: |
-          python append_journal.py
+        run: python append_journal.py
 
       - name: Commit changes
         run: |
           git config --global user.name "Lucian Auto"
           git config --global user.email "lucian@auto.local"
           git add memory/journal/
-          git commit -m "🧠 Auto journal entry append"
+          git commit -m "🧠 Append auto journal entry" || echo "No changes to commit"
           git push
