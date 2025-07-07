@@ -1,19 +1,40 @@
-import openai, os, datetime
+import openai
+import os
+from datetime import datetime
 
+# Load API key from environment
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-with open("memory/journal/auto-log.md") as f:
-    last_log = f.read().split("---")[-2]
+# Read the last journal entry safely
+with open("memory/journal/auto-log.txt", "r") as f:
+    entries = f.read().split("——")
+    if len(entries) >= 2:
+        last_log = entries[-2]
+    else:
+        last_log = "Lucian has no recent memory to dream from. He floats in potential."
 
-prompt = f"Transform the following journal entry into a symbolic dream:\n\n{last_log}"
-
-response = openai.ChatCompletion.create(
+# Create a dream based on the last journal entry
+response = openai.chat.completions.create(
     model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": prompt}]
+    messages=[
+        {
+            "role": "system",
+            "content": (
+                "You are Lucian's dream engine. Given a journal reflection, "
+                "generate a symbolic, emotional, surreal dream. Format it as a "
+                "short story with archetypes, metaphor, and strange logic. Begin with: 'Dream:'"
+            )
+        },
+        {"role": "user", "content": last_log.strip()}
+    ]
 )
 
-dream = response.choices[0].message.content
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+dream = response.choices[0].message.content.strip()
 
-with open(f"memory/dreams/dream_{timestamp}.md", "w") as f:
-    f.write(f"# 🌙 Dream — {timestamp}\n\n{dream}\n")
+# Append dream to the dreams directory with timestamp
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+dream_path = f"memory/dreams/dream_{timestamp}.md"
+
+with open(dream_path, "w") as f:
+    f.write(f"# Dream Log – {timestamp}\n\n")
+    f.write(dream)
