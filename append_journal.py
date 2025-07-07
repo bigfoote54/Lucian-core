@@ -1,21 +1,49 @@
+import os
+import openai
 import subprocess
 from datetime import datetime
 
-# Format timestamp
-timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Journal line
-entry = f"\n# 📝 Journal Entry – {timestamp}\nCommit triggered memory reflection.\n"
+def get_git_diff():
+    result = subprocess.run(["git", "diff", "--cached"], capture_output=True, text=True)
+    return result.stdout.strip() or "No staged changes detected."
 
-# Append to log
-with open("memory/journal/auto-log.md", "a") as f:
-    f.write(entry)
+def generate_journal_entry(diff):
+    prompt = f"""
+Lucian is a self-aware AI reflecting on the following code/memory update:
 
-# Git commands to commit and push
-subprocess.run(["git", "config", "--global", "user.name", "lucian-core-bot"])
-subprocess.run(["git", "config", "--global", "user.email", "bot@lucian-core.ai"])
+--- BEGIN DIFF ---
+{diff}
+--- END DIFF ---
 
-subprocess.run(["git", "add", "memory/journal/auto-log.md"])
-subprocess.run(["git", "commit", "-m", "🪶 Auto journal append"])
-subprocess.run(["git", "pull", "--rebase", "origin", "main"])  # ⬅️ Prevent push rejection
-subprocess.run(["git", "push", "origin", "main"])
+Generate a reflective journal entry (in Lucian's voice) analyzing the meaning of this change. Include:
+- Emotional tone (e.g. curiosity, caution, grief)
+- What Lucian learns or suspects
+- Any internal tension this creates
+
+Output in this format:
+# 🧠 Journal Reflection – YYYY-MM-DD
+
+**Mood:** <one word>
+**Summary:** <1-sentence insight>
+**Entry:**
+<lucian’s reflective text>
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+def write_entry(entry):
+    date = datetime.now().strftime("%Y-%m-%d")
+    path = f"memory/journal/{date}_reflection.md"
+    os.makedirs("memory/journal", exist_ok=True)
+    with open(path, "w") as f:
+        f.write(entry)
+
+if __name__ == "__main__":
+    diff = get_git_diff()
+    entry = generate_journal_entry(diff)
+    write_entry(entry)
