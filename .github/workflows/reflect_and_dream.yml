@@ -29,9 +29,13 @@ jobs:
 
       - name: 🧠 Append to Journal
         run: python append_journal.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: 🌙 Generate Dream
         run: python generate_dream.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: 📝 Commit Journal & Dream
         run: |
