@@ -35,8 +35,10 @@ jobs:
       - name: Commit changes
         run: |
           git config --global user.name "Lucian Auto"
-          git config --global user.email "lucian@auto.local"
-          git pull --rebase
+          git config --global user.email "lucian@auto.bot"
           git add .
           git commit -m "🧠 Append auto journal entry" || echo "No changes to commit"
-          git push
+          git stash --include-untracked || true
+          git pull --rebase
+          git stash pop || true
+          git push origin main
