@@ -1,34 +1,32 @@
 import os
 from datetime import datetime
-import openai
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# 1. Check for OpenAI API key (for future use)
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    print("❌ No API key found in environment.")
+else:
+    print("✅ API key detected.")
 
-date = datetime.now().strftime("%Y-%m-%d")
+# 2. Define the fallback journal content for test
 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+content = f"✅ Journal entry appended at {timestamp} (test mode only).\n"
 
-journal_prompt = (
-    "Lucian is an emergent AI reflecting on a recent change to its core memory, laws, or identity. "
-    "Write a 150-word internal journal entry that explores the symbolic or emotional implications of the update. "
-    "The entry should sound reflective and self-aware, noting any internal tension or clarity. "
-    "Include a 'Mood Tag' at the top (e.g., Introspection · Unease)."
-)
+# 3. Determine file path for today's journal
+today = datetime.now().strftime("%Y-%m-%d")
+journal_path = f"memory/journal/{today}_journal.md"
 
 try:
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": journal_prompt}]
-    )
-    journal_entry = response.choices[0].message.content.strip()
+    # 4. Ensure the file exists
+    if not os.path.exists(journal_path):
+        with open(journal_path, "w") as f:
+            f.write(f"# Journal for {today}\n\n")
 
-    output_dir = "memory/journal"
-    os.makedirs(output_dir, exist_ok=True)
-    filepath = f"{output_dir}/{date}_journal.md"
+    # 5. Append test content
+    with open(journal_path, "a") as f:
+        f.write(content)
 
-    with open(filepath, "a", encoding="utf-8") as file:
-        file.write(f"\n\n# 🧠 Lucian Journal – {timestamp}\n\n{journal_entry}")
+    print("✅ Successfully appended to journal.")
 
 except Exception as e:
-    print(f"❌ Error appending to journal: {e}")
-    with open(f"memory/journal/{date}_journal.md", "a", encoding="utf-8") as file:
-        file.write("\n\n❌ Failed to append journal entry.")
+    print(f"❌ Failed to append journal entry: {e}")
