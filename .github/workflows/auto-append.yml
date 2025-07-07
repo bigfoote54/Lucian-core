@@ -17,14 +17,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install openai
+          pip install openai python-dotenv
 
       - name: Set up authenticated git remote
         run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
@@ -36,6 +36,7 @@ jobs:
         run: |
           git config --global user.name "Lucian Auto"
           git config --global user.email "lucian@auto.local"
-          git add memory/journal/
+          git pull --rebase
+          git add .
           git commit -m "🧠 Append auto journal entry" || echo "No changes to commit"
           git push
