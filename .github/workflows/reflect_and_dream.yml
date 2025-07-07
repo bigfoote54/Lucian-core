@@ -8,10 +8,12 @@ on:
       - 'config/**'
       - 'memory/**'
       - 'lucian_startup.sh'
+  workflow_dispatch:
 
 jobs:
   reflect-and-dream:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
@@ -24,7 +26,7 @@ jobs:
       - name: 📦 Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install openai
+          pip install --upgrade openai
 
       - name: 🧠 Append to Journal
         run: python append_journal.py
@@ -38,8 +40,10 @@ jobs:
 
       - name: 💾 Commit Journal & Dream
         run: |
-          git config user.name "Lucian Auto"
-          git config user.email "lucian@auto.bot"
+          git config --global user.name "Lucian Auto"
+          git config --global user.email "lucian@auto.bot"
+          git config --global --add safe.directory "$(pwd)"
           git add memory/journal/ memory/dreams/
+          git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
           git commit -m "📝 Auto journal and dream on core change"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
