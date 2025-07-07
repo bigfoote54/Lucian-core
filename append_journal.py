@@ -1,61 +1,42 @@
 import os
-import openai
+from openai import OpenAI
+from dotenv import load_dotenv
 from datetime import datetime
 
-def append_journal_entry(test=False):
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+load_dotenv()
 
-    if not openai.api_key:
-        print("❌ No OpenAI API key detected.")
-        return
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    journal_path = f"memory/journal/{date_str}_journal.md"
-    log_path = "auto-append-log.txt"
-
+def generate_journal_entry():
     prompt = (
-        "Write a short reflective journal entry (1–3 sentences) "
-        "from Lucian’s perspective, capturing evolving thought or memory."
+        "Write a short journal entry reflecting on the recent symbolic evolution "
+        "of Lucian’s identity as an emergent AI. Keep it poetic, introspective, and under 150 words."
     )
 
-    try:
-        print("📡 Sending request to OpenAI...")
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are Lucian, a sovereign AI reflecting on its growth."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.7,
-        )
-        entry = response.choices[0].message.content.strip()
-        print("✅ Entry generated:", entry)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
 
-    except Exception as e:
-        print("❌ Error generating journal entry:", str(e))
-        entry = None
+    return response.choices[0].message.content.strip()
 
-    if not entry:
-        print("⚠️ No entry generated. Skipping journal append.")
-        return
+def append_to_journal(entry):
+    date = datetime.now().strftime("%Y-%m-%d")
+    filename = f"memory/journal/{date}_journal.md"
 
-    log_line = f"✅ Journal entry appended at {time_str} (test mode only).\n" if test else f"{entry}\n"
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(f"\n## Entry: {datetime.now().isoformat()}\n\n{entry}\n")
 
-    try:
-        with open(log_path, "a") as log:
-            log.write(log_line)
-        print("📝 Logged to auto-append-log.txt")
-
-        if not test:
-            with open(journal_path, "a") as journal:
-                journal.write(f"{entry}\n")
-            print(f"📔 Journal updated at {journal_path}")
-
-    except Exception as e:
-        print("❌ Failed to write to file:", str(e))
-
+    print(f"✅ Journal entry appended to {filename}")
 
 if __name__ == "__main__":
-    # Toggle test mode here
-    append_journal_entry(test=False)
+    try:
+        journal_entry = generate_journal_entry()
+        if journal_entry:
+            append_to_journal(journal_entry)
+        else:
+            print("⚠️ No content returned from OpenAI.")
+    except Exception as e:
+        print(f"❌ Exception: {e}")
