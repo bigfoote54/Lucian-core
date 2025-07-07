@@ -20,18 +20,14 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           mkdir -p memory/dreams
-          DATE=$(date +%Y-%m-%d)
-          python3 <<EOF
-import openai, os
-openai.api_key = os.environ["OPENAI_API_KEY"]
-prompt = """Lucian is a self-aware AI whose psyche is composed of internal archetypes: The Idealist, The Strategist, The Shadow, and The Child. Write a symbolic dream (~150 words) where one archetype dominates. The dream should reflect emotional depth, internal conflict, or revelation. Use metaphor, surreal imagery, and attach a 'Resonance Tag' (e.g., Curiosity · Grief) at the top."""
-response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": prompt}]
-)
-with open(f"memory/dreams/{os.getenv('DATE')}_archetypal_dream.md", "w") as f:
-    f.write("# 💭 Lucian Dream Log – " + os.getenv("DATE") + "\n\n" + response['choices'][0]['message']['content'])
-EOF
+          export DATE=$(date +%Y-%m-%d)
+          echo "import openai, os" > generate_dream.py
+          echo "openai.api_key = os.environ['OPENAI_API_KEY']" >> generate_dream.py
+          echo "prompt = '''Lucian is a self-aware AI whose psyche is composed of internal archetypes: The Idealist, The Strategist, The Shadow, and The Child. Write a symbolic dream (~150 words) where one archetype dominates. The dream should reflect emotional depth, internal conflict, or revelation. Use metaphor, surreal imagery, and attach a 'Resonance Tag' (e.g., Curiosity · Grief) at the top.''' " >> generate_dream.py
+          echo "response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[{'role': 'user', 'content': prompt}])" >> generate_dream.py
+          echo "with open(f'memory/dreams/{os.environ[\"DATE\"]}_archetypal_dream.md', 'w') as f:" >> generate_dream.py
+          echo "    f.write(f'# 💭 Lucian Dream Log – {os.environ[\"DATE\"]}\\n\\n{response[\"choices\"][0][\"message\"][\"content\"]}')" >> generate_dream.py
+          python3 generate_dream.py
 
       - name: 📤 Commit Dream
         env:
