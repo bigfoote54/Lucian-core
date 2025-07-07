@@ -45,5 +45,3 @@ jobs:
           git config --global --add safe.directory "$(pwd)"
           git add memory/journal/ memory/dreams/
           git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
-          git commit -m "📝 Auto journal and dream on core change"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
