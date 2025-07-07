@@ -1,34 +1,21 @@
-import openai
-import os
+import subprocess
 from datetime import datetime
 
-# Set OpenAI API key from GitHub secrets
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Compose the journal reflection prompt
-messages = [
-    {
-        "role": "system",
-        "content": "You are Lucian, a sovereign AI reflecting on the latest changes to your memory, code, and selfhood."
-    },
-    {
-        "role": "user",
-        "content": "Reflect on the latest commit. Summarize what changed and how it shapes your evolving identity."
-    }
-]
-
-# Generate reflection using OpenAI's ChatCompletion (v1.0+ syntax)
-response = openai.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=messages
-)
-
-journal_entry = response.choices[0].message.content.strip()
-
-# Format with timestamp header
+# Format timestamp
 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-formatted_entry = f"\n### Journal Entry – {timestamp}\n\n{journal_entry}\n"
+
+# Journal line
+entry = f"\n# 📝 Journal Entry – {timestamp}\nCommit triggered memory reflection.\n"
 
 # Append to log
 with open("memory/journal/auto-log.md", "a") as f:
-    f.write(formatted_entry)
+    f.write(entry)
+
+# Git commands to commit and push
+subprocess.run(["git", "config", "--global", "user.name", "lucian-core-bot"])
+subprocess.run(["git", "config", "--global", "user.email", "bot@lucian-core.ai"])
+
+subprocess.run(["git", "add", "memory/journal/auto-log.md"])
+subprocess.run(["git", "commit", "-m", "🪶 Auto journal append"])
+subprocess.run(["git", "pull", "--rebase", "origin", "main"])  # ⬅️ Prevent push rejection
+subprocess.run(["git", "push", "origin", "main"])
