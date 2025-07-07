@@ -1,0 +1,39 @@
+ Generate Dream
+        run: python generate_dream.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: p        run: |
+          git config user.name "Lucian Auto"
+          git config user.email "lucian@auto.bot"
+          git add memory/journal/ memory/dreams/
+          git commit -m "p          git pushname: p
+on:
+  push:
+    paths:
+      - 'identity/**'
+      - 'laws/**'
+      - 'config/**'
+      - 'memory/**'
+      - 'lucian_startup.sh'
+
+jobs:
+  reflect-and-dream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: p        uses: actions/checkout@v4
+
+      - name: p Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: p        run: |
+          python -m pip install --upgrade pip
+          pip install openai
+
+      - name: p        run: python append_journal.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: p
