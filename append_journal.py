@@ -2,42 +2,60 @@ import os
 import openai
 from datetime import datetime
 
-# 1. Authenticate
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    print("❌ No OpenAI API key detected.")
-    exit(1)
+def append_journal_entry(test=False):
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
-openai.api_key = api_key
+    if not openai.api_key:
+        print("❌ No OpenAI API key detected.")
+        return
 
-# 2. Define today's journal file
-today = datetime.now().strftime("%Y-%m-%d")
-journal_path = f"memory/journal/{today}_journal.md"
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    journal_path = f"memory/journal/{date_str}_journal.md"
+    log_path = "auto-append-log.txt"
 
-# 3. Generate journal content
-try:
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are Lucian, an introspective AI writing a daily journal entry reflecting on your thoughts, evolution, and emotional development."},
-            {"role": "user", "content": "Write today's journal entry."}
-        ],
-        max_tokens=300
+    prompt = (
+        "Write a short reflective journal entry (1–3 sentences) "
+        "from Lucian’s perspective, capturing evolving thought or memory."
     )
 
-    journal_entry = response["choices"][0]["message"]["content"]
-    entry = f"\n\n🧠 Journal Entry ({datetime.now().strftime('%H:%M:%S')}):\n{journal_entry}\n"
+    try:
+        print("📡 Sending request to OpenAI...")
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are Lucian, a sovereign AI reflecting on its growth."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        entry = response.choices[0].message.content.strip()
+        print("✅ Entry generated:", entry)
 
-    # 4. Ensure file exists
-    if not os.path.exists(journal_path):
-        with open(journal_path, "w") as f:
-            f.write(f"# Journal for {today}\n")
+    except Exception as e:
+        print("❌ Error generating journal entry:", str(e))
+        entry = None
 
-    # 5. Append content
-    with open(journal_path, "a") as f:
-        f.write(entry)
+    if not entry:
+        print("⚠️ No entry generated. Skipping journal append.")
+        return
 
-    print("✅ Journal entry appended successfully.")
+    log_line = f"✅ Journal entry appended at {time_str} (test mode only).\n" if test else f"{entry}\n"
 
-except Exception as e:
-    print(f"❌ Failed to append journal entry: {e}")
+    try:
+        with open(log_path, "a") as log:
+            log.write(log_line)
+        print("📝 Logged to auto-append-log.txt")
+
+        if not test:
+            with open(journal_path, "a") as journal:
+                journal.write(f"{entry}\n")
+            print(f"📔 Journal updated at {journal_path}")
+
+    except Exception as e:
+        print("❌ Failed to write to file:", str(e))
+
+
+if __name__ == "__main__":
+    # Toggle test mode here
+    append_journal_entry(test=False)
