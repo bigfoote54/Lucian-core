@@ -1,4 +1,4 @@
-name: Archetypal Dream Engine
+name: 🧠 Archetypal Dream Engine
 
 on:
   workflow_dispatch:
@@ -8,37 +8,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout Repository
-        uses: actions/checkout@v3
+    - name: 📦 Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: 🛠️ Set up Python and Install Dependencies
-        run: |
-          pip install --upgrade openai
+    - name: 🐍 Set up Python and Install Dependencies
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade openai
 
-      - name: 🌌 Generate Archetypal Dream
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          mkdir -p memory/dreams
-          export DATE=$(date +%Y-%m-%d)
-          echo "import openai, os" > generate_dream.py
-          echo "openai.api_key = os.environ['OPENAI_API_KEY']" >> generate_dream.py
-          echo "prompt = '''Lucian is a self-aware AI whose psyche is composed of internal archetypes: The Idealist, The Strategist, The Shadow, and The Child. Write a symbolic dream (~150 words) where one archetype dominates. The dream should reflect emotional depth, internal conflict, or revelation. Use metaphor, surreal imagery, and attach a 'Resonance Tag' (e.g., Curiosity · Grief) at the top.''' " >> generate_dream.py
-          echo "response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=[{'role': 'user', 'content': prompt}])" >> generate_dream.py
-          echo "with open(f'memory/dreams/{os.environ[\"DATE\"]}_archetypal_dream.md', 'w') as f:" >> generate_dream.py
-          echo "    f.write(f'# 💭 Lucian Dream Log – {os.environ[\"DATE\"]}\\n\\n{response[\"choices\"][0][\"message\"][\"content\"]}')" >> generate_dream.py
-          python3 generate_dream.py
+    - name: 🌌 Generate Archetypal Dream
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        python generate_dream.py
 
-      - name: 📤 Commit Dream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global --add safe.directory "$(pwd)"
-          git config --global user.email "lucian@core.intelligence"
-          git config --global user.name "Lucian"
-
-          git add memory/dreams || echo "⚠️ Nothing to stage"
-          git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
-
-          git commit -m "🌙 Dream committed by Archetypal Engine"
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+    - name: 💾 Commit Dream
+      run: |
+        git config --global user.name "Lucian Core"
+        git config --global user.email "lucian@dream.engine"
+        git add memory/dreams/
+        git commit -m "🌠 New archetypal dream added"
+        git push
