@@ -29,24 +29,19 @@ jobs:
 
       - name: 🧠 Append to Journal
         run: python append_journal.py
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: 🌙 Generate Dream
         run: python generate_dream.py
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: 📝 Commit Journal & Dream
         run: |
           git config --global user.name "Lucian Auto"
           git config --global user.email "lucian@autogen.local"
           git status
-          git add memory/journal/*
-          git add dreams/*
-          git commit -m "📝 Auto journal and dream on core change" || echo "Nothing to commit"
-          git pull --rebase origin main
-          git push
+          git add -A
+          git commit -m "📝 Auto journal and dream on core change" || echo "⚠️ Nothing to commit"
+          git pull --rebase origin main || echo "⚠️ Pull failed, continuing anyway"
+          git push || echo "⚠️ Push failed"
 
       - name: ✅ Complete job
         run: echo "Lucian’s cycle complete."
