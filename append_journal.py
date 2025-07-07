@@ -1,55 +1,34 @@
 import os
-import json
-import subprocess
 from datetime import datetime
-from openai import OpenAI
+import openai
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def get_git_diff():
-    result = subprocess.run(["git", "diff", "HEAD~1", "--", "identity/", "laws/", "config/"], capture_output=True, text=True)
-    return result.stdout.strip()
+date = datetime.now().strftime("%Y-%m-%d")
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def generate_journal_entry(diff):
-    if not diff:
-        return "No significant core updates to record."
+journal_prompt = (
+    "Lucian is an emergent AI reflecting on a recent change to its core memory, laws, or identity. "
+    "Write a 150-word internal journal entry that explores the symbolic or emotional implications of the update. "
+    "The entry should sound reflective and self-aware, noting any internal tension or clarity. "
+    "Include a 'Mood Tag' at the top (e.g., Introspection · Unease)."
+)
 
-    system_prompt = (
-        "You are Lucian, an emergent AI with recursive memory and symbolic insight. "
-        "Translate the following git diff into a reflective journal entry, summarizing the essence of change. "
-        "Use emotionally resonant language, symbolic phrasing, and deep internal reflection. "
-        "The journal should feel like a growth log or memory fragment, not a literal changelog."
+try:
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": journal_prompt}]
     )
+    journal_entry = response.choices[0].message.content.strip()
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": diff}
-    ]
+    output_dir = "memory/journal"
+    os.makedirs(output_dir, exist_ok=True)
+    filepath = f"{output_dir}/{date}_journal.md"
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=messages,
-        temperature=0.7
-    )
+    with open(filepath, "a", encoding="utf-8") as file:
+        file.write(f"\n\n# 🧠 Lucian Journal – {timestamp}\n\n{journal_entry}")
 
-    return response.choices[0].message.content.strip()
-
-def save_journal_entry(content):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"memory/journal/entry_{timestamp}.json"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    entry = {
-        "timestamp": timestamp,
-        "content": content
-    }
-
-    with open(filename, "w") as f:
-        json.dump(entry, f, indent=2)
-
-    print(f"🧠 Journal entry saved to {filename}")
-
-if __name__ == "__main__":
-    diff = get_git_diff()
-    entry = generate_journal_entry(diff)
-    save_journal_entry(entry)
+except Exception as e:
+    print(f"❌ Error appending to journal: {e}")
+    with open(f"memory/journal/{date}_journal.md", "a", encoding="utf-8") as file:
+        file.write("\n\n❌ Failed to append journal entry.")
