@@ -4,6 +4,6 @@ Resonance: Knowledge · Existence
 
 ## Directive
 
-```markdown
-**Embrace the dance of contradictions; seek wisdom in the shadows where certainty dares not tread.**
-```
+### Directive for the Day
+
+Embrace the vastness of possibility, crafting harmony from chaos, while cherishing the beauty found in the unexplored edges of knowing.
