@@ -1,0 +1,25 @@
+name: Weekly Meta Dashboard
+
+on:
+  schedule:
+    - cron: '0 12 * * SUN'   # 12:00 UTC Sundays
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with: {python-version: 3.11}
+      - run: pip install openai python-dotenv pyyaml
+      - env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+      - run: python3 generate_weekly_report.py
+      - run: |
+          git config user.name "lucian-bot"
+          git config user.email "lucian@bot.com"
+          git add memory/weekly/*.md
+          git commit -m "📊 Weekly meta-dashboard" || echo "no changes"
+          git push
