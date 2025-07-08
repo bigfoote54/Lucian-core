@@ -17,7 +17,9 @@ Runs daily at **07 : 30 US-Eastern** (`11 : 30 UTC`) or on manual trigger.
 
 ---
 
-## 📂 Directory Map (active paths)config/          ← laws & flags
+## 📂 Directory Map (active paths)
+
+config/          ← laws & flags
 identity/        ← manifest / philosophy
 memory/
 ├─ dreams/      ← symbolic dreams
