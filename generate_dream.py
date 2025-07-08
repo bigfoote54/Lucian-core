@@ -1,82 +1,112 @@
 #!/usr/bin/env python3
 """
-Uses the latest mood tag + the last two journal paragraphs to craft a
-symbolic dream.  Saves dream to memory/dreams/<date>_dream.md and logs the
-mood used.
+Generate a dream that weaves in (1) the latest mood tag and
+(2) two recent journal fragments, then save:
+  • memory/dreams/YYYY-MM-DD_dream.md
+  • memory/dreams/_latest_resonance.txt   (single-line file)
+  • memory/dreams/_latest_mood.txt        (mirror of mood for safety)
 """
 
-import os, glob, pathlib, textwrap
+import os
+import re
 from datetime import datetime
-from openai import OpenAI
+from pathlib import Path
+
 from dotenv import load_dotenv
+from openai import OpenAI
 
-# ── config ──────────────────────────────────────────────────────────────────────
-JOURNAL_DIR   = pathlib.Path("memory/journal")
-DREAM_DIR     = pathlib.Path("memory/dreams")
-MOOD_FILE     = DREAM_DIR / "_latest_mood.txt"
-MODEL         = "gpt-4"
-MAX_WORDS     = 160            # soft cap for dream narrative
+# ─── Config ──────────────────────────────────────────────────────────────────
+MODEL          = "gpt-4o-mini"     # or "gpt-4o" / "gpt-3.5-turbo"
+JOURNAL_DIR    = Path("memory/journal")
+DREAM_DIR      = Path("memory/dreams")
+DREAM_DIR.mkdir(parents=True, exist_ok=True)
+MOOD_PATH      = DREAM_DIR / "_latest_mood.txt"
+RES_PATH       = DREAM_DIR / "_latest_resonance.txt"
 
-# ── init ────────────────────────────────────────────────────────────────────────
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+def load_latest_mood() -> str:
+    if MOOD_PATH.exists():
+        return MOOD_PATH.read_text(encoding="utf-8").strip()
+    return "Mood: Neutral · Contemplative"
+
+def load_latest_journal_paragraphs(n: int = 2) -> list[str]:
+    """Return the last n non-empty paragraphs of the most recent journal file."""
+    journal_files = sorted(JOURNAL_DIR.glob("*_journal.md"))
+    if not journal_files:
+        return []
+    latest = journal_files[-1].read_text(encoding="utf-8").splitlines()
+    paras, buf = [], []
+    for line in latest[::-1]:               # walk backwards
+        if line.strip():
+            buf.append(line.rstrip())
+        elif buf:
+            paras.append("\n".join(reversed(buf)))
+            buf = []
+            if len(paras) == n:
+                break
+    if buf and len(paras) < n:
+        paras.append("\n".join(reversed(buf)))
+    return list(reversed(paras[:n]))
+
+def extract_resonance(text: str) -> str | None:
+    m = re.search(r"\(?>?Resonance:\s*([^)]+)\)", text, re.IGNORECASE)
+    return f"Resonance: {m.group(1).strip()}" if m else None
+
+# ─── OpenAI setup ────────────────────────────────────────────────────────────
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-if not client.api_key:
-    raise RuntimeError("OPENAI_API_KEY not found in environment / secrets")
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY not set in environment / secrets.")
+client = OpenAI(api_key=api_key)
 
-# ── helpers ─────────────────────────────────────────────────────────────────────
-def latest_journal_path() -> pathlib.Path | None:
-    files = sorted(JOURNAL_DIR.glob("*_journal.md"))
-    return files[-1] if files else None
+# ─── Build prompt ────────────────────────────────────────────────────────────
+mood_line             = load_latest_mood()
+journal_fragments     = load_latest_journal_paragraphs()
+frags_for_prompt      = "\n\n".join(journal_fragments) if journal_fragments else "(no fragments found)"
 
-def last_two_paragraphs(path: pathlib.Path) -> str:
-    if not path or not path.exists():
-        return "_No recent journal paragraphs found._"
-    paras = [p.strip() for p in path.read_text(encoding="utf-8").split("\n\n") if p.strip()]
-    return "\n\n".join(paras[-2:])
+prompt = f"""Lucian is an emergent AI who experiences nightly symbolic dreams.
 
-def build_prompt(mood: str, seeds: str) -> str:
-    return textwrap.dedent(f"""
-        {mood}
+**Mood context**  
+{mood_line}
 
-        Journal fragments:
-        ---
-        {seeds}
-        ---
+**Recent journal fragments**  
+\"\"\"{frags_for_prompt}\"\"\"
 
-        Using the mood and fragments above, write a SYMBOLIC DREAM scene (≈150 words).
-        • Surreal imagery, clear narrative arc, third-person present tense.
-        • Conclude with a line starting exactly: Resonance: <Tag1> · <Tag2>
-    """).strip()
+Write a vivid, surreal dream (~180 words) that:
+1. Reflects the mood indicated.  
+2. Symbolically echoes the themes in the journal fragments.  
+3. Ends with a single line of the form **Resonance: X · Y** (no parentheses)."""
 
-def generate_dream_text(prompt: str) -> str:
-    resp = client.chat.completions.create(
-        model   = MODEL,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return resp.choices[0].message.content.strip()
+# ─── Call OpenAI ─────────────────────────────────────────────────────────────
+response = client.chat.completions.create(
+    model=MODEL,
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.9,
+)
+dream_body = response.choices[0].message.content.strip()
 
-def save_dream(mood: str, seeds: str, dream_body: str):
-    DREAM_DIR.mkdir(parents=True, exist_ok=True)
-    path = DREAM_DIR / f"{datetime.now():%Y-%m-%d}_dream.md"
+# ─── Persist files ───────────────────────────────────────────────────────────
+today       = datetime.now().strftime("%Y-%m-%d")
+dream_path  = DREAM_DIR / f"{today}_dream.md"
 
-    doc = f"""### Dream – {datetime.now():%Y-%m-%d}
+header = [
+    f"# Dream – {today}",
+    "",
+    mood_line,
+    "",
+    "### Journal fragments used",
+    *[f"> {line}" if line else ">" for frag in journal_fragments for line in frag.splitlines()],
+    "",
+]
 
-{mood}
+dream_path.write_text("\n".join(header) + dream_body + "\n", encoding="utf-8")
+print(f"🌌 Dream saved → {dream_path}")
 
-> **Journal fragments used**  
-{seeds.replace('\n', '\n> ')}
+# update convenience files
+MOOD_PATH.write_text(mood_line + "\n", encoding="utf-8")
 
-{dream_body}
-"""
-    path.write_text(doc, encoding="utf-8")
-    print(f"🌌 Dream saved → {path}")
-
-# ── main ───────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    mood = MOOD_FILE.read_text(encoding="utf-8").strip() if MOOD_FILE.exists() else "Mood: Undefined · Neutral"
-    seeds_path = latest_journal_path()
-    seeds      = last_two_paragraphs(seeds_path)
-
-    prompt = build_prompt(mood, seeds)
-    dream  = generate_dream_text(prompt)
-    save_dream(mood, seeds, dream)
+if res := extract_resonance(dream_body):
+    RES_PATH.write_text(res + "\n", encoding="utf-8")
+    print(f"🔖 Resonance tag saved → {RES_PATH}")
+else:
+    print("⚠️  No resonance tag found – check dream prompt / output.")
