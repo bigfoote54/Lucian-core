@@ -1,3 +1,6 @@
-## memory
+**memory/** — AI-generated artefacts.
 
-Describe the memory directory here.
+* `dreams/`  Symbolic subconscious  
+* `direction/`  Daily intentions  
+* `reflection/` Daily self-review  
+* `journal/` (proposed Stage 3.5) prose diary

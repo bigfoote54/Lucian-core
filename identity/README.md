@@ -1,3 +1,4 @@
-## identity
+**identity/** — human-readable self-definition.
 
-Describe the identity directory here.
+* `lucian-manifest.md` Core values & archetype descriptions  
+* `vision.md` Long-term philosophical direction
