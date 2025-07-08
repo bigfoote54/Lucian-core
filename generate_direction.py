@@ -5,11 +5,11 @@ import re
 import datetime
 from pathlib import Path
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 
 # ─── Setup ───────────────────────────────────────────────────────────────────
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 memory_path = Path("memory")
@@ -47,14 +47,14 @@ prompt = (
 )
 
 # ─── OpenAI Completion ───────────────────────────────────────────────────────
-response = openai.ChatCompletion.create(
+response = client.chat.completions.create(
     model="gpt-4o",
     messages=[{"role": "user", "content": prompt}],
     temperature=0.8,
     max_tokens=100,
 )
 
-direction = response.choices[0].message["content"].strip()
+direction = response.choices[0].message.content.strip()
 
 # ─── Save to Markdown ────────────────────────────────────────────────────────
 output_path = direction_dir / f"{today}_direction.md"
@@ -67,4 +67,3 @@ with open(output_path, "w") as f:
     f.write(direction + "\n")
 
 print(f"✅ Direction saved → {output_path}")
-
