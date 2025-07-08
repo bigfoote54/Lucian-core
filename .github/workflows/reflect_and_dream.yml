@@ -12,6 +12,9 @@ jobs:
   reflect-and-dream:
     runs-on: ubuntu-latest
 
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
     steps:
       - name: 🛠️ Set up job
         run: echo "Starting Lucian reflection cycle..."
@@ -37,11 +40,12 @@ jobs:
         run: |
           git config --global user.name "Lucian Auto"
           git config --global user.email "lucian@autogen.local"
-          git status
-          git add -A
-          git commit -m "📝 Auto journal and dream on core change" || echo "⚠️ Nothing to commit"
-          git pull --rebase origin main || echo "⚠️ Pull failed, continuing anyway"
-          git push || echo "⚠️ Push failed"
+          git add memory/journal/*
+          git add memory/dreams/*
+          git add memory/dreams/_latest_mood.txt || true
+          git commit -m "📝 Auto journal and dream on core change" || echo "Nothing to commit"
+          git pull --rebase origin main || true
+          git push || echo "Nothing to push"
 
       - name: ✅ Complete job
         run: echo "Lucian’s cycle complete."
