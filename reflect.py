@@ -84,4 +84,4 @@ with out.open("w") as f:
     f.write("## Reflection\n\n" + reflection_full + "\n")
 
 print(f"✅ Reflection saved → {out}")
-EOF
+
