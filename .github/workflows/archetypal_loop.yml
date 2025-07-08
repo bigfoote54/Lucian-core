@@ -1,0 +1,42 @@
+name: Daily Archetypal Loop
+
+on:
+  schedule:
+    - cron: '30 11 * * *'  # Runs daily at 11:30 UTC (~7:30 AM EST)
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: 📦 Install Dependencies
+        run: pip install openai python-dotenv
+
+      - name: 🔑 Inject API Key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+
+      - name: 🌌 Generate Archetypal Dream
+        run: python3 generate_archetypal_dream.py
+
+      - name: 🧭 Generate Daily Direction
+        run: python3 generate_direction.py
+
+      - name: 📤 Commit and Push
+        run: |
+          git config user.name "lucian-bot"
+          git config user.email "lucian@bot.com"
+          git add memory/dreams/*.md memory/direction/*.md
+          git commit -m "🌀 Auto-generated daily dream and directive" || echo "No changes"
+          git push
+
