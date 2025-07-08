@@ -21,17 +21,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade openai
 
-    - name: 🌌 Generate Archetypal Dream
+    - name: 🌌 Generate Archetypal Dream (Short Form)
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        python generate_dream.py
+        python generate_archetypal_dream.py
 
-    - name: 💾 Commit Dream
+    - name: 💾 Commit Archetypal Dream
       run: |
         git config --global user.name "Lucian Core"
         git config --global user.email "lucian@dream.engine"
         git add memory/dreams/
         git diff --cached --quiet && echo "⚠️ No new dreams to commit" && exit 0
-        git commit -m "🌠 New archetypal dream added"
+        git commit -m "🌠 New short-form archetypal dream added"
         git push
