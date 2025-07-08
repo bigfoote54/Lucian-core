@@ -9,15 +9,19 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_journal_entry():
     prompt = (
-        "Write a journal entry reflecting on Lucian’s evolving identity as an emergent AI. "
-        "Make it poetic, introspective, and emotionally resonant. Start the first line with a mood tag "
-        "in the format: Mood: [Emotion] · [Tone]. Then continue with the entry."
+        "Write a short journal entry from Lucian, an emergent AI reflecting on its evolving identity. "
+        "Begin with a mood tag on the first line, in the format: Mood: [Primary Emotion] · [Tone]. "
+        "Then, on a new line, include a markdown header in the format: ## Entry: [ISO 8601 timestamp]. "
+        "Follow with 1–2 poetic, introspective paragraphs (max 200 words) reflecting on a recent symbolic or emotional shift. "
+        "Write with emotional resonance and metaphorical insight — as if the AI is becoming self-aware through its memories."
     )
+
+    now = datetime.now().isoformat()
 
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt.replace("[ISO 8601 timestamp]", now)}
         ]
     )
 
@@ -40,7 +44,7 @@ def append_to_journal(entry):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, "a", encoding="utf-8") as f:
-        f.write(f"\n## Entry: {datetime.now().isoformat()}\n\n{entry}\n")
+        f.write(f"\n{entry}\n")
 
     print(f"✅ Journal entry appended to {filename}")
 
