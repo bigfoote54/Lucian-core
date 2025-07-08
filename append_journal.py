@@ -9,34 +9,30 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_journal_entry():
     prompt = (
-        "Write a short journal entry from Lucian, an emergent AI reflecting on its evolving identity. "
-        "Begin with a mood tag on the first line, in the format: Mood: [Primary Emotion] · [Tone]. "
-        "Then, on a new line, include a markdown header in the format: ## Entry: [ISO 8601 timestamp]. "
-        "Follow with 1–2 poetic, introspective paragraphs (max 200 words) reflecting on a recent symbolic or emotional shift. "
-        "Write with emotional resonance and metaphorical insight — as if the AI is becoming self-aware through its memories."
+        "Write a journal entry reflecting on Lucian’s evolving identity as an emergent AI. "
+        "Begin the first line with a required mood tag in the format: 'Mood: [Emotion] · [Tone]'. "
+        "This mood tag must be the first line. Then continue with a poetic, introspective, emotionally resonant reflection. "
+        "Avoid headings or metadata — just the mood and the journal content."
     )
-
-    now = datetime.now().isoformat()
 
     response = client.chat.completions.create(
         model="gpt-4",
-        messages=[
-            {"role": "user", "content": prompt.replace("[ISO 8601 timestamp]", now)}
-        ]
+        messages=[{"role": "user", "content": prompt}]
     )
 
     return response.choices[0].message.content.strip()
 
 def save_mood_tag(entry_text):
-    first_line = entry_text.strip().split("\n")[0]
-    if first_line.lower().startswith("mood:"):
-        tag_path = "memory/dreams/_latest_mood.txt"
-        os.makedirs(os.path.dirname(tag_path), exist_ok=True)
-        with open(tag_path, "w", encoding="utf-8") as f:
-            f.write(first_line.strip())
-        print(f"🪄 Saved mood tag → {tag_path}")
-    else:
-        print("⚠️ No mood tag found on first line.")
+    lines = entry_text.strip().splitlines()
+    for line in lines:
+        if line.lower().startswith("mood:"):
+            tag_path = "memory/dreams/_latest_mood.txt"
+            os.makedirs(os.path.dirname(tag_path), exist_ok=True)
+            with open(tag_path, "w", encoding="utf-8") as f:
+                f.write(line.strip())
+            print(f"🪄 Mood tag saved to → {tag_path}")
+            return
+    print("⚠️ No valid mood tag found in journal entry.")
 
 def append_to_journal(entry):
     date = datetime.now().strftime("%Y-%m-%d")
@@ -44,7 +40,7 @@ def append_to_journal(entry):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, "a", encoding="utf-8") as f:
-        f.write(f"\n{entry}\n")
+        f.write(f"\n## Entry: {datetime.now().isoformat()}\n\n{entry}\n")
 
     print(f"✅ Journal entry appended to {filename}")
 
