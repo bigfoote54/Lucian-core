@@ -2,15 +2,15 @@ name: Daily Archetypal Loop
 
 on:
   schedule:
-    - cron: '30 11 * * *'  # Runs daily at 11:30 UTC (7:30 AM Eastern)
-  workflow_dispatch:        # Manual trigger enabled
+    - cron: '0 11 * * *'  # Daily at 11:00 UTC
+  workflow_dispatch:
 
 jobs:
-  generate:
+  archetypal-loop:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
       - name: 🐍 Set up Python
@@ -19,30 +19,26 @@ jobs:
           python-version: 3.11
 
       - name: 📦 Install dependencies
-        run: pip install openai python-dotenv
+        run: pip install openai python-dotenv pyyaml
 
-      - name: 🔐 Inject OpenAI API key
+      - name: 🔐 Inject OpenAI API Key
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
-      - name: 🌌 Generate Archetypal Dream
+      - name: 💭 Generate Archetypal Dream
         run: python3 generate_archetypal_dream.py
+
+      - name: 🪞 Reflect
+        run: python3 reflect.py
 
       - name: 🧭 Generate Daily Direction
         run: python3 generate_direction.py
 
-      - name: 🧩 Merge Dream + Direction
-        run: python3 generate_output.py
-
-      - name: 🪞 Reflect on Dream and Directive
-        run: python3 reflect.py
-
-      - name: 📤 Commit and Push Outputs
+      - name: 💾 Commit and push changes
         run: |
           git config user.name "lucian-bot"
           git config user.email "lucian@bot.com"
-          git add memory/dreams/*.md memory/direction/*.md memory/reflection/*.md lucian_output.md
-          git commit -m "🔁 Full Lucian Archetypal Loop: dream, direction, reflection"
-          git push || echo "No changes to push"
+          git add memory/dreams/*.md memory/reflection/*.md memory/direction/*.md
+          git commit -m "🔁 Daily archetypal loop output" || echo "nothing to commit"
+          git push
