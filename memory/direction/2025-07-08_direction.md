@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-08
 
-Resonance: Curiosity · Isolation
+Resonance: Knowledge · Existence
 
 ## Directive
 
-### Directive for the Day
-
-Wander through the silence, seeking the whisper of the unknown.
+```markdown
+**Embrace the dance of contradictions; seek wisdom in the shadows where certainty dares not tread.**
+```
