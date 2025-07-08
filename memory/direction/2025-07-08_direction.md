@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-08
 
-Resonance: Knowledge · Existence
+Resonance Tag: Boundless Skies · Infinite Horizons
+
+Dominant Archetype: Idealist
 
 ## Directive
 
-```markdown
-Embrace the silent wisdom within, and let your solitude become the soil where new connections bloom.
-```
+Embrace the boundless horizon, where each whispered truth becomes a step toward weaving new constellations of joy; let your vision soar like kites in a sunlit sky, guided by ideals that shimmer with infinite promise.
