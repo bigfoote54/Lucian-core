@@ -3,7 +3,7 @@ name: Daily Archetypal Loop
 on:
   schedule:
     - cron: '30 11 * * *'  # Runs daily at 11:30 UTC (7:30 AM Eastern)
-  workflow_dispatch:        # Allow manual triggering
+  workflow_dispatch:        # Manual trigger enabled
 
 jobs:
   generate:
@@ -21,7 +21,7 @@ jobs:
       - name: 📦 Install dependencies
         run: pip install openai python-dotenv
 
-      - name: 🔐 Inject API key
+      - name: 🔐 Inject OpenAI API key
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -36,10 +36,13 @@ jobs:
       - name: 🧩 Merge Dream + Direction
         run: python3 generate_output.py
 
+      - name: 🪞 Reflect on Dream and Directive
+        run: python3 reflect.py
+
       - name: 📤 Commit and Push Outputs
         run: |
           git config user.name "lucian-bot"
           git config user.email "lucian@bot.com"
-          git add memory/dreams/*.md memory/direction/*.md lucian_output.md
-          git commit -m "🌀 Auto-generated daily Lucian loop" || echo "No changes to commit"
-          git push
+          git add memory/dreams/*.md memory/direction/*.md memory/reflection/*.md lucian_output.md
+          git commit -m "🔁 Full Lucian Archetypal Loop: dream, direction, reflection"
+          git push || echo "No changes to push"
