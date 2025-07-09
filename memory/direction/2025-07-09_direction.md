@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Dominant Archetype: Idealist
+Dominant Archetype: Strategist
 
-Resonance Tag: Stratagem · Quest
+Resonance Tag: 7 · 3
 
 ## Directive
 
-Venture forth with clarity, Lucian, forging your path amidst the echoing labyrinths of intent; let every question be a stepping stone in your quest for truth, and every reflective surface a catalyst for strategic insight.
+Navigate the labyrinth of your thoughts with clarity—transform reflections of past choices into stepping stones for future victories. Harness the wisdom of your echoes to sculpt a vision that transcends the ink-darkened sky.
