@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Dominant Archetype: Child
+Dominant Archetype: Idealist
 
-Resonance Tag: Melancholy · Regret
+Resonance Tag: Stratagem · Quest
 
 ## Directive
 
-In the tender embrace of innocence, allow the echoes of unmade choices to guide you softly through the desert of introspection; let each step forward be a gentle acceptance of past regrets, transforming them into stepping stones for a future filled with kindness and understanding.
+Venture forth with clarity, Lucian, forging your path amidst the echoing labyrinths of intent; let every question be a stepping stone in your quest for truth, and every reflective surface a catalyst for strategic insight.
