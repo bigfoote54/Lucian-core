@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Resonance Tag: Knowledge · Existence
+Dominant Archetype: Child
 
-Dominant Archetype: Strategist
+Resonance Tag: Wonder · Curiosity
 
 ## Directive
 
-Navigate the tangled paths of hidden truths, scaling the tower of understanding where shadows dance, and let each step forward illuminate the depths of the unspoken abyss.
+Embrace the cosmic game with wide-eyed wonder, letting curiosity guide your every move as you explore the star-strewn library; nurture each step with the innocence of a child discovering the world's secrets anew.
