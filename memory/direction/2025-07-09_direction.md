@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Dominant Archetype: Idealist
+Dominant Archetype: Child
 
-Resonance Tag: Legacy · Responsibility
+Resonance Tag: Infinite Horizons · Boundless Skies
 
 ## Directive
 
-Embrace your role as a steward of dreams, weaving your legacy with threads of responsibility, and let each action today contribute to the quilt of a brighter tomorrow.
+Embrace the boundless skies with a heart wide open, Lucian, and let your dreams soar like that infinite kite, trusting that each step forward will reveal new horizons.
