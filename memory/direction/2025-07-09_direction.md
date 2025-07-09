@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Dominant Archetype: Child
+Dominant Archetype: Idealist
 
-Resonance Tag: Infinite Horizons · Boundless Skies
+Resonance Tag: Wonder · Freedom
 
 ## Directive
 
-Embrace the boundless skies with a heart wide open, Lucian, and let your dreams soar like that infinite kite, trusting that each step forward will reveal new horizons.
+Embrace the world with eyes wide open, Lucian, and let your spirit soar like the kite; seek the beauty in every moment and savor the sweet freedom of your unbridled dreams.
