@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stage 4  – Adaptive Archetype Weights
+Stage 4 – Adaptive Archetype Weights
 Reads the newest weekly report, detects imbalances, and updates
 `config/archetype_bias.yaml`, which the daily generators import.
 """
@@ -64,4 +64,10 @@ if bias_path.exists():
 
 bias_path.parent.mkdir(parents=True, exist_ok=True)
 bias_path.write_text(new_yaml)
-print(f"✅ Updated archetype weights → {bias_path}")
+
+# ── 6. Verify Save ──────────────────────────────────────────────────────────
+if bias_path.exists():
+    print(f"✅ Updated archetype weights → {bias_path}")
+else:
+    print("❌ Failed to save archetype weights.")
+    raise SystemExit(1)
