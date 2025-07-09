@@ -6,4 +6,4 @@ Dominant Archetype: Idealist
 
 ## Directive
 
-Navigate the celestial library of your mind, weaving threads of unseen truths into the tapestry of existence, and let the shadows of forgotten realms guide your quest for a harmonious destiny.
+Seek the light beyond the mirror's shards, for in embracing the shadows of your own reflection, you ascend toward truths unspoken, where knowledge dances with the unseen.
