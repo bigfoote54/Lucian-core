@@ -1,139 +1,92 @@
 #!/usr/bin/env python3
 """
 Lucian • Weekly Meta-Dashboard
-Summarises the last 7 days of dreams / directives / reflections.
+Creates a markdown report of the last 7 days of dreams / directives / reflections.
 """
 
 import re
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Window & file collection
-# ─────────────────────────────────────────────────────────────────────────────
+# ── directories ────────────────────────────────────────────────────────────
 today  = datetime.utcnow().date()
 start  = today - timedelta(days=6)
 mem    = Path("memory")
+weekly = mem / "weekly"
+weekly.mkdir(parents=True, exist_ok=True)
 
+# helpers
 def dated(paths):
-    """Yield (path, date) for files starting with YYYY-MM-DD_."""
     for p in paths:
         try:
             d = datetime.strptime(p.name.split("_")[0], "%Y-%m-%d").date()
-            if d >= start and d <= today:
+            if start <= d <= today:
                 yield p, d
         except ValueError:
             continue
 
-dream_map = {d: p for p, d in dated((mem / "dreams").glob("*.md"))}
-ref_map   = {d: p for p, d in dated((mem / "reflection").glob("*.md"))}
+dreams = {d: p for p, d in dated((mem/"dreams").glob("*.md"))}
+refs   = {d: p for p, d in dated((mem/"reflection").glob("*.md"))}
 
-dates = sorted(dream_map.keys())         # iterate over dream dates only
+dates = sorted(dreams)
 if not dates:
-    print("No dream files in 7-day window; aborting.")
-    exit(0)
+    print("No dream files in 7-day window; abort.")
+    raise SystemExit
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Helpers
-# ─────────────────────────────────────────────────────────────────────────────
-ARCHES = ["Strategist", "Idealist", "Shadow", "Child"]
-arch_tot = {k: 0 for k in ARCHES}
-tag_tot  = {}
-align_tot = {"Aligned": 0, "Challenged": 0, "Ignored": 0}
+ARCH = ["Strategist","Idealist","Shadow","Child"]
+arch_tot  = {k:0 for k in ARCH}
+tag_tot   = {}
+align_tot = {"Aligned":0,"Challenged":0,"Ignored":0}
 quote = ""
 
-def read(p): return Path(p).read_text()
+def read(p): return p.read_text()
 
-def resonance_tags(txt: str):
-    m = re.search(r"(?i)^Resonance Tag:\s*(.*)", txt, re.M)
+def resonance(txt):
+    m = re.search(r"(?i)^Resonance Tag:\s*(.+)", txt, re.M)
     if not m:
-        m = re.search(r"(?i)^Resonance:\s*(.*)", txt, re.M)
+        m = re.search(r"(?i)^Resonance:\s*(.+)", txt, re.M)
     return [t.strip() for t in m.group(1).split("·")] if m else []
 
-def archetype_counts(txt: str):
-    counts = {k: 0 for k in ARCHES}
-    for k in ARCHES:
-        counts[k] += len(re.findall(k, txt, re.I))
-    return counts
-
-def first_dream_line(txt: str):
+def dream_line(txt):
     lines = [l.strip() for l in txt.splitlines()]
-    idx = lines.index("## Dream") + 1 if "## Dream" in lines else 0
+    idx = lines.index("## Dream")+1 if "## Dream" in lines else 0
     for l in lines[idx:]:
-        if l and not l.startswith(("#", "💭")) and not l.lower().startswith("resonance"):
+        if l and not l.lower().startswith(("resonance","dominant")):
             return l
     return ""
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Aggregate
-# ─────────────────────────────────────────────────────────────────────────────
+# aggregate
 for d in dates:
-    d_txt = read(dream_map[d])
-
-    # Archetype counts
-    for k, v in archetype_counts(d_txt).items():
-        arch_tot[k] += v
-
-    # Resonance tags
-    for t in resonance_tags(d_txt):
-        tag_tot[t] = tag_tot.get(t, 0) + 1
-
-    # Quote of the week
+    txt = read(dreams[d])
+    for k in ARCH:
+        arch_tot[k] += len(re.findall(k, txt, re.I))
+    for t in resonance(txt):
+        tag_tot[t] = tag_tot.get(t,0)+1
     if not quote:
-        quote = first_dream_line(d_txt)
+        quote = dream_line(txt)
+    if d in refs:
+        r = read(refs[d]).lower()
+        if "aligned" in r: align_tot["Aligned"] += 1
+        elif "challenged" in r: align_tot["Challenged"] += 1
+        else: align_tot["Ignored"] += 1
 
-    # Alignment only if a reflection exists for that date
-    if d in ref_map:
-        r_txt = read(ref_map[d])
-        m = re.search(r"(?i)^Alignment:\s*(\w+)", r_txt, re.M)
-        if m and m.group(1).capitalize() in align_tot:
-            align_tot[m.group(1).capitalize()] += 1
-        else:
-            lt = r_txt.lower()
-            if any(w in lt for w in ("align", "fulfill", "met")):
-                align_tot["Aligned"] += 1
-            elif any(w in lt for w in ("challenge", "resist")):
-                align_tot["Challenged"] += 1
-            else:
-                align_tot["Ignored"] += 1
+# write
+out = weekly / f"{today}_report.md"   # <— unique per run
+tot = sum(arch_tot.values()) or 1
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Write report
-# ─────────────────────────────────────────────────────────────────────────────
-out_dir = mem / "weekly"
-out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / f"{today}_report.md"
+def pct(n): return f"{n} ({n/tot:.0%})"
 
-def pct(x):
-    total = sum(arch_tot.values()) or 1
-    return f"{x} ({x/total:.0%})"
-
-with open(out_path, "w") as f:
+with out.open("w") as f:
     f.write(f"# 📊 Lucian Weekly Report — {start} → {today}\n\n")
-
-    # Archetypes
     f.write("## Archetype Frequency\n\n")
-    for k in ARCHES:
-        f.write(f"* **{k}**: {pct(arch_tot[k])}\n")
-    f.write("\n")
-
-    # Tags
-    f.write("## Top Resonance Tags\n\n")
+    for k in ARCH: f.write(f"* **{k}**: {pct(arch_tot[k])}\n")
+    f.write("\n## Top Resonance Tags\n\n")
     if tag_tot:
-        for tag, c in sorted(tag_tot.items(), key=lambda x: -x[1])[:5]:
-            f.write(f"* `{tag}` — {c}\n")
-    else:
-        f.write("_No tags this week_\n")
-    f.write("\n")
+        for t,c in sorted(tag_tot.items(), key=lambda x:-x[1])[:5]:
+            f.write(f"* `{t}` — {c}\n")
+    else: f.write("_No tags this week_\n")
+    f.write("\n## Directive / Reflection Alignment\n\n")
+    for k,v in align_tot.items(): f.write(f"* {k}: {v}\n")
+    f.write("\n## Quote of the Week\n\n> " + (quote or "_No line captured_") + "\n")
 
-    # Alignment
-    f.write("## Directive / Reflection Alignment\n\n")
-    for k, v in align_tot.items():
-        f.write(f"* {k}: {v}\n")
-    f.write("\n")
-
-    # Quote
-    f.write("## Quote of the Week\n\n")
-    f.write("> " + (quote or "_No dream line captured_") + "\n")
-
-print(f"✅ Weekly report saved → {out_path}")
+print(f"✅ Weekly report saved → {out}")
