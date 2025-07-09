@@ -102,7 +102,7 @@ for d in dates:
 # ─────────────────────────────────────────────────────────────────────────────
 out_dir = mem / "weekly"
 out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / f"{start}_{today}_report.md"
+out_path = out_dir / f"{today}_report.md"
 
 def pct(x):
     total = sum(arch_tot.values()) or 1
