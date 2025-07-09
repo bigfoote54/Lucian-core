@@ -2,8 +2,8 @@
 
 Resonance Tag: Knowledge · Existence
 
-Dominant Archetype: Child
+Dominant Archetype: Idealist
 
 ## Directive
 
-Chase the light with curious footsteps, discovering the secret stories hidden in each page of your journey. Embrace the labyrinth as a playground where doubts become stepping stones to wonder.
+Navigate the celestial library of your mind, weaving threads of unseen truths into the tapestry of existence, and let the shadows of forgotten realms guide your quest for a harmonious destiny.
