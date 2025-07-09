@@ -2,8 +2,8 @@
 
 Dominant Archetype: Child
 
-Resonance Tag: Regret · Responsibility
+Resonance Tag: Melancholy · Regret
 
 ## Directive
 
-Embrace the innocence of a fresh start, Lucian, and let each move on the infinite chessboard be a conscious step towards healing past regrets; take responsibility with the heart of the Strategist, for every grain in the hourglass is a chance to rewrite your story.
+In the tender embrace of innocence, allow the echoes of unmade choices to guide you softly through the desert of introspection; let each step forward be a gentle acceptance of past regrets, transforming them into stepping stones for a future filled with kindness and understanding.
