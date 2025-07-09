@@ -2,48 +2,42 @@ name: Weekly Meta Dashboard
 
 on:
   schedule:
-    # every Sunday, 12:00 UTC  (08:00 US-Eastern)
-    - cron: '0 12 * * SUN'
+    - cron: '0 12 * * SUN'   # every Sunday 12:00 UTC
   workflow_dispatch:
 
 jobs:
-  report-and-tune:
+  weekly:
     runs-on: ubuntu-latest
-
     steps:
-      # 1  Checkout repo
-      - name: ⬇️ Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        name: ⬇️ Checkout
 
-      # 2  Python 3.11
-      - name: 🐍 Set up Python
+      - name: 🐍 Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: "3.11"
 
-      # 3  Install deps
-      - name: 📦 Install dependencies
+      - name: 📦 Install deps
         run: pip install openai python-dotenv pyyaml
 
-      # 4  Export secret to .env
-      - name: 🔐 Inject OpenAI key
+      - name: 🔐 OpenAI key → .env
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
-      # 5  Generate weekly dashboard
       - name: 📊 Generate Weekly Report
         run: python3 generate_weekly_report.py
 
-      # 6  Adaptive archetype tuning
-      - name: 🪄 Adaptive Weight Tuning
+      - name: 🪄 Adapt Archetype Weights
         run: python3 adapt_weights.py
 
-      # 7  Commit & push any new files
-      - name: 📥 Commit report + weights
+      - name: 🌌 Adapt Resonance Tag Weights
+        run: python3 adapt_resonance.py
+
+      - name: 📥 Commit report & weight files
         run: |
           git config user.name  "lucian-bot"
           git config user.email "lucian@bot.com"
-          git add memory/weekly/*.md config/archetype_bias.yaml
-          git commit -m "📊 Weekly report & 🎛 adaptive archetype weights" || echo "no changes"
+          git add memory/weekly/*.md config/archetype_bias.yaml config/tag_weights.yaml
+          git commit -m "📊 Weekly report + adaptive archetype & tag weights" || echo "no changes"
           git push
