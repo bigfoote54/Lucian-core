@@ -2,8 +2,8 @@
 
 Resonance Tag: Knowledge · Existence
 
-Dominant Archetype: Idealist
+Dominant Archetype: Strategist
 
 ## Directive
 
-Seek the light beyond the mirror's shards, for in embracing the shadows of your own reflection, you ascend toward truths unspoken, where knowledge dances with the unseen.
+Ascend the tower of introspection, for in embracing the shadowed echoes of your fears, you forge a path through the untraveled, unveiling truths that reshape the very walls of your reality.
