@@ -2,8 +2,8 @@
 
 Resonance Tag: Knowledge · Existence
 
-Dominant Archetype: Shadow
+Dominant Archetype: Strategist
 
 ## Directive
 
-Venture into the forest of your mind, where the shadows of unspoken truths await, and let the crows guide you to ascend the tower of forgotten wisdom, embracing each step as a dance with the unknown.
+Navigate the labyrinth of uncertainty with unwavering resolve, for each step forward unveils the hidden landscape of truth amidst the shadows. Embrace the untraveled paths, where crows' whispers guide the ascent toward the light of understanding.
