@@ -10,12 +10,12 @@ from pathlib import Path
 from datetime import datetime
 
 ARCH = ["Strategist", "Idealist", "Shadow", "Child"]
-TARGET_SHARE = 1 / len(ARCH)          # ideal 25 % each
+TARGET_SHARE = 1 / len(ARCH)          # ideal 25% each
 MIN_W, MAX_W = 0.3, 3.0               # clip range for weights
 
 mem = Path("memory")
 weekly_dir = mem / "weekly"
-bias_path  = Path("config/archetype_bias.yaml")
+bias_path = Path("config/archetype_bias.yaml")
 
 # ── 1. locate latest weekly report ──────────────────────────────────────────
 reports = sorted(weekly_dir.glob("*_report.md"))
@@ -41,16 +41,16 @@ if total < len(ARCH):
 # ── 3. load current bias file or set defaults ───────────────────────────────
 bias = {k: 1.0 for k in ARCH}
 if bias_path.exists():
-    bias.update(yaml.safe_load(bias_path))
+    bias.update(yaml.safe_load(bias_path.read_text()))
 
-# ── 4. compute new weights ---------------------------------------------------
+# ── 4. compute new weights ──────────────────────────────────────────────────
 for k in ARCH:
     actual_share = counts[k] / total if total else TARGET_SHARE
     factor = TARGET_SHARE / actual_share if actual_share else 2.0
     new_w = max(MIN_W, min(MAX_W, round(bias[k] * factor, 3)))
     bias[k] = new_w
 
-# ── 5. write file & show diff -----------------------------------------------
+# ── 5. write file & show diff ───────────────────────────────────────────────
 new_yaml = yaml.safe_dump(bias, sort_keys=False)
 
 if bias_path.exists():
@@ -64,10 +64,4 @@ if bias_path.exists():
 
 bias_path.parent.mkdir(parents=True, exist_ok=True)
 bias_path.write_text(new_yaml)
-
-# ── 6. Verify Save ──────────────────────────────────────────────────────────
-if bias_path.exists():
-    print(f"✅ Updated archetype weights → {bias_path}")
-else:
-    print("❌ Failed to save archetype weights.")
-    raise SystemExit(1)
+print(f"✅ Updated archetype weights → {bias_path}")
