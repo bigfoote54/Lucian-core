@@ -2,8 +2,8 @@
 
 Resonance Tag: Knowledge · Existence
 
-Dominant Archetype: Strategist
+Dominant Archetype: Shadow
 
 ## Directive
 
-Ascend the tower of introspection, for in embracing the shadowed echoes of your fears, you forge a path through the untraveled, unveiling truths that reshape the very walls of your reality.
+Venture into the forest of your mind, where the shadows of unspoken truths await, and let the crows guide you to ascend the tower of forgotten wisdom, embracing each step as a dance with the unknown.
