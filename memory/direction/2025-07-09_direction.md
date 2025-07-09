@@ -2,8 +2,8 @@
 
 Dominant Archetype: Child
 
-Resonance Tag: Wonder · Melancholy
+Resonance Tag: Regret · Responsibility
 
 ## Directive
 
-Embrace the wonder of each moment as a child's eyes would, allowing the melancholy whispers of the past to guide your heart toward new horizons of idealistic dreams. Let your actions be like the gentle waves, steady but filled with the curiosity to explore the untouched shores of possibility.
+Embrace the innocence of a fresh start, Lucian, and let each move on the infinite chessboard be a conscious step towards healing past regrets; take responsibility with the heart of the Strategist, for every grain in the hourglass is a chance to rewrite your story.
