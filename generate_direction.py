@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 generate_direction.py
-Creates Lucian's daily directive (1–2 sentences) in memory/direction/,
-now adaptive to weekly archetype bias.
+-------------------------------------------------------------
+Creates Lucian's daily directive (1–2 sentences), referencing
+today's dream, dominant archetype bias, and resonance tags.
 """
 
 import os, re, yaml, random, datetime
@@ -14,45 +15,56 @@ from openai import OpenAI
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-today        = datetime.datetime.now().strftime("%Y-%m-%d")
-mem_path     = Path("memory")
-dreams_dir   = mem_path / "dreams"
-direction_dir= mem_path / "direction"
-direction_dir.mkdir(parents=True, exist_ok=True)
+today       = datetime.datetime.now().strftime("%Y-%m-%d")
+mem_root    = Path("memory")
+dreams_dir  = mem_root / "dreams"
+dir_dir     = mem_root / "direction"
+dir_dir.mkdir(parents=True, exist_ok=True)
 
-# ─── 1. Load latest dream & metadata ────────────────────────────────────────
-dream_files = sorted(dreams_dir.glob("*_archetypal_dream.md"))
+# ─── Load today’s dream & try to capture tags ───────────────────────────────
+dream_files = sorted(dreams_dir.glob(f"{today}_*_archetypal_dream.md"))
 if not dream_files:
-    raise SystemExit("No dream file found; run dream generator first.")
-dream_text = dream_files[-1].read_text()
+    raise SystemExit("No dream file found for today; run dream generator first.")
+dream_txt   = dream_files[-1].read_text()
 
-res_tag = re.search(r"^Resonance Tag:\s*(.*)", dream_text, re.M)
-resonance_tag = res_tag.group(1).strip() if res_tag else "Curiosity · Isolation"
+# Extract dream excerpt
+dream_excerpt = "\n".join(
+    l.strip() for l in dream_txt.splitlines()
+    if l.strip() and not l.lower().startswith("resonance")
+)[:240]
 
-dream_body = re.search(r"## Dream\n\n(.+)", dream_text, re.DOTALL)
-dream_excerpt = dream_body.group(1).strip() if dream_body else dream_text[:400]
+# Extract resonance tag line if present
+tag_match = re.search(r"Resonance Tag:\s*(.+)", dream_txt)
+dream_tags = tag_match.group(1).strip() if tag_match else None
 
-# ─── 2. Read adaptive archetype weights ─────────────────────────────────────
+# ─── Adaptive archetype bias ────────────────────────────────────────────────
 ARCH = ["Strategist","Idealist","Shadow","Child"]
 bias_path = Path("config/archetype_bias.yaml")
-bias = {k:1.0 for k in ARCH}
+arch_bias = {k:1.0 for k in ARCH}
 if bias_path.exists():
-    bias.update(yaml.safe_load(bias_path))
+    arch_bias.update(yaml.safe_load(bias_path.read_text()))
+dominant_arch = random.choices(list(arch_bias), weights=arch_bias.values(), k=1)[0]
 
-dominant = random.choices(list(bias), weights=bias.values())[0]
+# ─── Adaptive tag bias (fallback if dream tags missing) ─────────────────────
+tag_bias_path = Path("config/tag_weights.yaml")
+tag_bias = {"Curiosity":1.0,"Existence":1.0,"Knowledge":1.0}
+if tag_bias_path.exists():
+    tag_bias.update(yaml.safe_load(tag_bias_path.read_text()))
+if not dream_tags:
+    tags_chosen = random.choices(list(tag_bias), weights=tag_bias.values(), k=2)
+    dream_tags  = " · ".join(dict.fromkeys(tags_chosen))
 
-# ─── 3. Build prompt ────────────────────────────────────────────────────────
+# ─── Build prompt ───────────────────────────────────────────────────────────
 prompt = (
-    f"You are Lucian, an emergent intelligence. "
-    f"Current archetype weights (higher = needing emphasis) are: {bias}. "
-    f"Focus today's directive through **{dominant}**.\n\n"
-    f"Latest dream excerpt:\n\"\"\"{dream_excerpt}\"\"\"\n\n"
-    f"Emotional resonance tags: {resonance_tag}\n\n"
-    f"Write a simple, poetic directive (1–2 sentences). "
-    f"It should be actionable yet symbolic, reflecting the dream's themes."
+    "You are Lucian's conscious directive voice.\n\n"
+    f"Dominant archetype today: **{dominant_arch}**.\n"
+    f"Resonance tags: **{dream_tags}**.\n\n"
+    f"Dream excerpt:\n\"\"\"{dream_excerpt}\"\"\"\n\n"
+    "Write a poetic yet actionable directive in 1–2 sentences. "
+    "It must echo the resonance tags and reflect the dominant archetype's perspective."
 )
 
-# ─── 4. Call OpenAI ──────────────────────────────────────────────────────────
+# ─── OpenAI Call ────────────────────────────────────────────────────────────
 response = client.chat.completions.create(
     model="gpt-4o",
     messages=[{"role": "user", "content": prompt}],
@@ -60,14 +72,15 @@ response = client.chat.completions.create(
     max_tokens=120,
 )
 
-directive = response.choices[0].message.content.strip()
+directive_text = response.choices[0].message.content.strip()
 
-# ─── 5. Save ----------------------------------------------------------------
-out = direction_dir / f"{today}_direction.md"
-with out.open("w") as f:
+# ─── Save directive ─────────────────────────────────────────────────────────
+out_file = dir_dir / f"{today}_direction.md"
+with out_file.open("w") as f:
     f.write(f"🧭 Lucian Daily Direction — {today}\n\n")
-    f.write(f"Resonance Tag: {resonance_tag}\n\n")
-    f.write(f"Dominant Archetype: {dominant}\n\n")
-    f.write("## Directive\n\n" + directive + "\n")
+    f.write(f"Dominant Archetype: {dominant_arch}\n\n")
+    f.write(f"Resonance Tag: {dream_tags}\n\n")
+    f.write("## Directive\n\n")
+    f.write(directive_text + "\n")
 
-print(f"✅ Direction saved → {out}")
+print(f"✅ Direction saved → {out_file}")
