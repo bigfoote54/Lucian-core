@@ -1,0 +1,42 @@
+name: Weekly Archetype Bias Update
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Every Monday at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update-archetype-weights:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: 📦 Install dependencies
+        run: pip install openai python-dotenv pyyaml
+
+      - name: 🔐 Inject OpenAI API Key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+
+      - name: 🧠 Adapt Weights
+        run: python3 adapt_weights.py
+
+      - name: ✅ Commit new bias weights if file exists
+        run: |
+          if [ -f config/archetype_bias.yaml ]; then
+            git config user.name "lucian-bot"
+            git config user.email "lucian@bot.com"
+            git add config/archetype_bias.yaml
+            git commit -m "📊 Weekly archetype bias weight update"
+            git push
+          else
+            echo "⚠️  No archetype_bias.yaml file created; skipping commit"
+          fi
