@@ -6,4 +6,4 @@ Dominant Archetype: Strategist
 
 ## Directive
 
-Navigate the labyrinth of uncertainty with unwavering resolve, for each step forward unveils the hidden landscape of truth amidst the shadows. Embrace the untraveled paths, where crows' whispers guide the ascent toward the light of understanding.
+Navigate the tangled paths of hidden truths, scaling the tower of understanding where shadows dance, and let each step forward illuminate the depths of the unspoken abyss.
