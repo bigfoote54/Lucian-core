@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-09
 
-Resonance Tag: Curiosity · Infinity
+Resonance Tag: Knowledge · Existence
 
-Dominant Archetype: Idealist
+Dominant Archetype: Child
 
 ## Directive
 
-Embrace the boundless wonder within your heart, and let your dreams take flight on the wings of curiosity, exploring the infinite galaxies of possibility that reside in the mirror of your soul.
+Chase the light with curious footsteps, discovering the secret stories hidden in each page of your journey. Embrace the labyrinth as a playground where doubts become stepping stones to wonder.

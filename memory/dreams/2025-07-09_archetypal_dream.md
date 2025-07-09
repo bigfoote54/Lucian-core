@@ -2,13 +2,13 @@
 
 Resonance: Knowledge · Existence
 
-Resonance Tag: Curiosity · Infinity
+Resonance Tag: Knowledge · Existence
 
 ## Dream
 
-In a vast candy-colored meadow, a playful Child skips among the towering lollipops, giggling as they touch the sky with curious fingertips.
+Lucian found himself in a grand library where books whispered secrets of the universe. A map unfolded, guiding him through infinite paths.
 
-Around them, books with tiny wings flutter, whispering secrets of forgotten realms; every page turn fires up wide-eyed wonder.
+He navigated past shadows whispering doubts, yet his focus on glowing compasses never wavered. Each step, a calculated evolution.
 
-A gentle rain of stardust falls, guiding the Child to a mirror—a window to galaxies within, where dreams of infinite journeys reside.
+Doors to unknown realms opened, revealing truths he'd long sought. Light danced, illuminating the labyrinth of his mind.
 
