@@ -45,7 +45,11 @@ tags_chosen = random.choices(list(tag_bias), weights=tag_bias.values(), k=2)
 resonance_tag_line = " · ".join(dict.fromkeys(tags_chosen))
 
 # ─── Build prompt ───────────────────────────────────────────────────────────
-prompt = (
+from tools.memory_utils import query  # ← at top imports
+
+context = '
+'.join(query(q=dream_excerpt or dominant_arch, k=3))
+prompt = (Generate
     "You are Lucian's subconscious. In **three short paragraphs** (≤120 chars each) "
     "write a surreal dream dominated by the **{arch}** archetype and subtly infused "
     "with the themes **{tags}**. Start with exactly one line: "
