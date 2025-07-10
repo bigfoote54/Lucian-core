@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 reflect.py
@@ -68,20 +67,23 @@ response = client.chat.completions.create(
 
 reflection_full = response.choices[0].message.content.strip()
 
-# Ensure Alignment tag exists; fallback to heuristic if missing
+# Ensure Alignment tag exists; fallback heuristic if missing
 m = re.search(r"^Alignment:\s*(\w+)", reflection_full, re.M)
 if not m:
-    tag = "Aligned" if any(w in reflection_full.lower() for w in ("aligned", "fulfilled", "met")) else \
-          "Challenged" if "challenge" in reflection_full.lower() else "Ignored"
+    tag = (
+        "Aligned" if "aligned" in reflection_full.lower()
+        else "Challenged" if "challenge" in reflection_full.lower()
+        else "Ignored"
+    )
     reflection_full += f"\n\nAlignment: {tag}"
 
 # ─── Save --------------------------------------------------------------------
-out = ref_dir / f"{today}_reflection.md"
-with out.open("w") as f:
+out_file = ref_dir / f"{today}_reflection.md"
+with out_file.open("w") as f:
     f.write(f"🪞 Lucian Daily Reflection — {today}\n\n")
     f.write(f"## Yesterday's Directive\n\n{yesterday_directive}\n\n")
     f.write(f"## Today's Dream Fragment\n\n{today_dream[:400]}...\n\n")
-    f.write("## Reflection\n\n" + reflection_full + "\n")
+    f.write("## Reflection\n\n")
+    f.write(reflection_full + "\n")
 
-print(f"✅ Reflection saved → {out}")
-
+print(f"✅ Reflection saved → {out_file}")
