@@ -2,16 +2,19 @@ name: Weekly Meta Dashboard
 
 on:
   schedule:
-    - cron: '0 12 * * SUN'   # every Sunday 12:00 UTC
+    - cron: '0 12 * * SUN'     # every Sunday 12:00 UTC
   workflow_dispatch:
 
 jobs:
   weekly:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        name: ⬇️ Checkout
 
+    steps:
+      # ─── Repo checkout ────────────────────────────────────────────────
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4        # (v4 is the current LTS)
+
+      # ─── Python env ───────────────────────────────────────────────────
       - name: 🐍 Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -20,11 +23,13 @@ jobs:
       - name: 📦 Install deps
         run: pip install openai python-dotenv pyyaml
 
+      # ─── Secrets → .env ───────────────────────────────────────────────
       - name: 🔐 OpenAI key → .env
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
+      # ─── Generate weekly artefacts ────────────────────────────────────
       - name: 📊 Generate Weekly Report
         run: python3 generate_weekly_report.py
 
@@ -34,10 +39,21 @@ jobs:
       - name: 🌌 Adapt Resonance Tag Weights
         run: python3 adapt_resonance.py
 
+      # ─── Commit only when something changed ───────────────────────────
       - name: 📥 Commit report & weight files
         run: |
           git config user.name  "lucian-bot"
           git config user.email "lucian@bot.com"
-          git add memory/weekly/*.md config/archetype_bias.yaml config/tag_weights.yaml
-          git commit -m "📊 Weekly report + adaptive archetype & tag weights" || echo "no changes"
-          git push
+
+          # Stage potential outputs (ignore if absent)
+          git add memory/weekly/*.md \
+                  config/archetype_bias.yaml \
+                  config/tag_weights.yaml 2>/dev/null || true
+
+          # Commit & push only if there is a diff
+          if ! git diff --cached --quiet; then
+            git commit -m "📊 Weekly report + adaptive weights"
+            git push
+          else
+            echo "No changes to commit"
+          fi
