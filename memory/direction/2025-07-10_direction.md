@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-10
 
-Dominant Archetype: Idealist
+Dominant Archetype: Shadow
 
-Resonance Tag: Harmony · Stratagem · Wonder
+Resonance Tag: Obsession · Shadow · Stratagem
 
 ## Directive
 
-In the tapestry of your day, seek the harmony within and beyond, weaving stratagems of wonder that liberate your spirit and those around you, as the owl guides with celestial insight.
+Embrace the mirrors' reflections, for within their depths lies the map of your hidden desires; navigate this labyrinth with calculated obsession, and let the fog guide your steps to unveil the stratagem of your shadow.
