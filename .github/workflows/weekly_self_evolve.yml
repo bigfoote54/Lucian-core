@@ -5,48 +5,54 @@ on:
     - cron: '45 12 * * SUN'      # every Sunday 12:45 UTC
   workflow_dispatch:
 
+# Give the default GITHUB_TOKEN enough power to push *and* open PRs
 permissions:
-  contents: write                # allow the workflow to push / open PRs
+  contents: write
+  pull-requests: write
 
 jobs:
   evolve:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout
-      - uses: actions/checkout@v4
+      # 1 ─ Checkout repo
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
 
-      # 2) Python env
-      - uses: actions/setup-python@v4
+      # 2 ─ Python 3.11
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # 3) Install deps
+      # 3 ─ Install project deps
       - name: 📦 Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install openai python-dotenv pyyaml
+          pip  install openai python-dotenv pyyaml
 
-      # 4) Inject OpenAI key
-      - name: 🔐 OpenAI key
+      # 4 ─ Inject OpenAI key
+      - name: 🔐 Write .env
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
-      # 5) Generate improvement proposal
-      - name: 🤖 Generate improvement proposal
+      # 5 ─ Generate improvement proposal (creates proposals/YYYY-MM-DD_proposal.md)
+      - name: 🤖 Generate proposal
         run: python tools/propose_improvement.py
 
-      # 6) Commit on branch & open PR
+      # 6 ─ Create PR with proposal
       - name: 📬 Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: "auto/self-evolve-${{ github.run_id }}"
+          token: ${{ github.token }}            # now has PR scope
+          branch: auto/self-evolve-${{ github.run_id }}
           add-paths: |
             proposals/*.md
-          commit-message: "🤖 proposal: self-evolve $(date -u +'%Y-%m-%d')"
+          commit-message: |
+            🤖 proposal: self-evolve ${{ github.run_number }} (auto)
           title: "🤖 Lucian self-evolve proposal"
           body: |
-            Automated self-improvement proposal generated from latest metrics.
-            **Please review, edit, or merge.**
+            Automated self-improvement proposal generated from the latest metrics.
+            Please review, discuss, and merge if appropriate.
           delete-branch: true
