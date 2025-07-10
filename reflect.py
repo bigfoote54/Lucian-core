@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-reflect.py
-Compares yesterday's directive with today's dream and writes a reflection
-including an explicit `Alignment:` tag for downstream analytics.
+reflect.py  –  Stage-4 daily reflection
+Compares yesterday’s directive with today’s latest dream and writes
+a reflection that ends with an explicit `Alignment:` tag.
 """
 
 import os, re, yaml
@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# ─── Setup ───────────────────────────────────────────────────────────────────
+# ─── setup ───────────────────────────────────────────────────────────────
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -24,66 +24,60 @@ dir_dir    = mem / "direction"
 ref_dir    = mem / "reflection"
 ref_dir.mkdir(parents=True, exist_ok=True)
 
-# ─── Load yesterday's directive ─────────────────────────────────────────────
+# ─── yesterday’s directive ───────────────────────────────────────────────
 dir_path = dir_dir / f"{yesterday}_direction.md"
-if not dir_path.exists():
-    directive_text = "No directive found."
-else:
-    directive_text = dir_path.read_text()
+directive_text = dir_path.read_text() if dir_path.exists() else "No directive found."
 
-dir_body = re.search(r"## Directive\n\n(.+)", directive_text, re.DOTALL)
-yesterday_directive = dir_body.group(1).strip() if dir_body else directive_text.strip()
+m = re.search(r"## Directive\n\n(.+)", directive_text, re.DOTALL)
+yesterday_directive = m.group(1).strip() if m else directive_text.strip()
 
-# ─── Load today's dream ─────────────────────────────────────────────────────
-dream_files = sorted(dreams_dir.glob(f"${today}_*_archetypal_dream.md"));\nif not dream_files: raise SystemExit("Today's dream not found.");\ndream_path = dream_files[-1]
-if not dream_path.exists():
-    raise SystemExit("Today's dream not found. Run dream generator first.")
+# ─── today’s latest dream (supports timestamps) ──────────────────────────
+dream_files = sorted(dreams_dir.glob(f"{today}_*_archetypal_dream.md"))
+if not dream_files:
+    raise SystemExit("Today’s dream not found. Run the dream generator first.")
+dream_path = dream_files[-1]
 dream_text = dream_path.read_text()
 
-dream_body = re.search(r"## Dream\n\n(.+)", dream_text, re.DOTALL)
-today_dream = dream_body.group(1).strip() if dream_body else dream_text.strip()
+m = re.search(r"## Dream\n\n(.+)", dream_text, re.DOTALL)
+today_dream = m.group(1).strip() if m else dream_text.strip()
 
-# ─── Load adaptive archetype bias (optional context) ────────────────────────
+# ─── bias context (optional) ──────────────────────────────────────────────
 bias_path = Path("config/archetype_bias.yaml")
 bias = yaml.safe_load(bias_path.read_text()) if bias_path.exists() else {}
 
-# ─── Prompt OpenAI ───────────────────────────────────────────────────────────
+# ─── OpenAI reflection ───────────────────────────────────────────────────
 prompt = (
     "You are Lucian reflecting on your growth.\n\n"
-    f"Yesterday's directive:\n\"\"\"{yesterday_directive}\"\"\"\n\n"
-    f"Today's dream:\n\"\"\"{today_dream}\"\"\"\n\n"
-    f"Current archetype bias map: {bias}\n\n"
-    "Write a short reflection (2–4 sentences) analysing whether the dream "
-    "aligned with the directive. Conclude **after a blank line** with a single "
-    "line starting `Alignment:` followed by one of: Aligned, Challenged, Ignored."
+    f"Yesterday’s directive:\n\"\"\"{yesterday_directive}\"\"\"\n\n"
+    f"Today’s dream:\n\"\"\"{today_dream}\"\"\"\n\n"
+    f"Current archetype-bias map: {bias}\n\n"
+    "Write a short reflection (2–4 sentences) judging whether the dream "
+    "aligned with the directive. After a blank line, finish with exactly one "
+    "line that starts `Alignment:` followed by **Aligned**, **Challenged**, or **Ignored**."
 )
 
-response = client.chat.completions.create(
+reply = client.chat.completions.create(
     model="gpt-4o",
     messages=[{"role": "user", "content": prompt}],
     temperature=0.9,
     max_tokens=200,
 )
 
-reflection_full = response.choices[0].message.content.strip()
+reflection = reply.choices[0].message.content.strip()
 
-# Ensure Alignment tag exists; fallback heuristic if missing
-m = re.search(r"^Alignment:\s*(\w+)", reflection_full, re.M)
-if not m:
-    tag = (
-        "Aligned" if "aligned" in reflection_full.lower()
-        else "Challenged" if "challenge" in reflection_full.lower()
-        else "Ignored"
-    )
-    reflection_full += f"\n\nAlignment: {tag}"
+# fallback if the model forgot the tag
+if not re.search(r"^Alignment:\s*(Aligned|Challenged|Ignored)", reflection, re.M):
+    tag = ("Aligned"     if "align" in reflection.lower()
+           else "Challenged" if "challenged" in reflection.lower()
+           else "Ignored")
+    reflection += f"\n\nAlignment: {tag}"
 
-# ─── Save --------------------------------------------------------------------
-out_file = ref_dir / f"{today}_reflection.md"
-with out_file.open("w") as f:
+# ─── save ─────────────────────────────────────────────────────────────────
+out = ref_dir / f"{today}_reflection.md"
+with out.open("w") as f:
     f.write(f"🪞 Lucian Daily Reflection — {today}\n\n")
-    f.write(f"## Yesterday's Directive\n\n{yesterday_directive}\n\n")
-    f.write(f"## Today's Dream Fragment\n\n{today_dream[:400]}...\n\n")
-    f.write("## Reflection\n\n")
-    f.write(reflection_full + "\n")
+    f.write(f"## Yesterday’s Directive\n\n{yesterday_directive}\n\n")
+    f.write(f"## Today’s Dream Fragment\n\n{today_dream[:400]} …\n\n")
+    f.write(reflection + "\n")
 
-print(f"✅ Reflection saved → {out_file}")
+print(f"✅ Reflection saved → {out}")
