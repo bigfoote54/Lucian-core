@@ -35,7 +35,7 @@ dir_body = re.search(r"## Directive\n\n(.+)", directive_text, re.DOTALL)
 yesterday_directive = dir_body.group(1).strip() if dir_body else directive_text.strip()
 
 # ─── Load today's dream ─────────────────────────────────────────────────────
-dream_path = dreams_dir / f"{today}_archetypal_dream.md"
+dream_files = sorted(dreams_dir.glob(f"${today}_*_archetypal_dream.md"));\nif not dream_files: raise SystemExit("Today's dream not found.");\ndream_path = dream_files[-1]
 if not dream_path.exists():
     raise SystemExit("Today's dream not found. Run dream generator first.")
 dream_text = dream_path.read_text()
