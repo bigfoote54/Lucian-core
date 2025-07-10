@@ -1,0 +1,31 @@
+name: Weekly Self-Evolve
+on:
+  schedule:
+    - cron: '45 12 * * SUN'
+  workflow_dispatch:
+permissions: { contents: write }
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with: { python-version: '3.11' }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install openai python-dotenv pyyaml
+      - name: 🔐 OpenAI key
+        env: { OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} }
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+      - name: 🤖 Generate improvement proposal
+        run: python tools/propose_improvement.py
+      - name: Commit & PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: "auto/self-evolve-\$(date +'%Y%m%d')"
+          add-paths: |
+            proposals/*.md
+          commit-message: "🤖 proposal: self-evolve \$(date -u +'%Y-%m-%d')"
+          title: "🤖 Lucian self-evolve proposal"
+          body: "Automated proposal generated from latest metrics.  Please review."
+          delete-branch: true
