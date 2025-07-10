@@ -1,40 +1,49 @@
-name: Nightly Reflect & Evolve
-permissions: { contents: write }
+name: Nightly Reflect
+
 on:
-  schedule: [ { cron: '5 3 * * *' } ]   # 03:05 UTC daily
+  schedule:
+    - cron: '5 3 * * *'      # 03:05 UTC daily
   workflow_dispatch:
+
+permissions:
+  contents: write            # allow push via GITHUB_TOKEN
+
 jobs:
   reflect:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # 1) Checkout repo
+      - name: ⬇️ Checkout
         uses: actions/checkout@v4
+
+      # 2) Python 3.11 + deps
+      - uses: actions/setup-python@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          python-version: '3.11'
 
-      - name: Set auth remote
-        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+      - name: 📦 Install deps
+        run: pip install openai python-dotenv pyyaml
 
-      - name: Generate reflection
+      # 3) Write .env with secret key
+      - name: 🔐 Set OpenAI key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+
+      # 4) Generate reflection using new script
+      - name: 🪞 Run reflect.py
+        run: python3 reflect.py
+
+      # 5) Commit reflection only if created/changed
+      - name: 📥 Commit reflection file
         run: |
-          LAST_DREAM=$(ls -t memory/dreams | head -1)
-          LAST_JOURNAL=$(ls -t memory/journal | head -1)
-          DATE=$(date +%Y-%m-%d_%H-%M-%S)
-          echo "## Reflection – $DATE" > lucian_meta/reflection_${DATE}.md
-          echo "- Dream reviewed: $LAST_DREAM" >> lucian_meta/reflection_${DATE}.md
-          echo "- Journal reviewed: $LAST_JOURNAL" >> lucian_meta/reflection_${DATE}.md
-          echo "- Insight: Maintaining narrative continuity strengthens identity." >> lucian_meta/reflection_${DATE}.md
-          # bump evolution counter
-          if grep -q "^Evolution Counter:" lucian_meta/identity_manifest.md; then
-            sed -i 's/Evolution Counter: \([0-9]*\)/echo "Evolution Counter: $((\1+1))"/e' lucian_meta/identity_manifest.md
+          git config user.name  "lucian-bot"
+          git config user.email "lucian@bot.com"
+          git add memory/reflection/*.md
+          if ! git diff --cached --quiet; then
+            git commit -m "🌙 Nightly reflection"
+            git push
           else
-            echo -e "\nEvolution Counter: 1" >> lucian_meta/identity_manifest.md
+            echo "No new reflection to commit"
           fi
-
-      - name: Commit & push
-        run: |
-          git config --global user.email "lucian@core.intelligence"
-          git config --global user.name  "Lucian"
-          git add lucian_meta
-          git commit -m "meta: nightly reflection $DATE" || echo "Nothing new"
-          git push origin main
