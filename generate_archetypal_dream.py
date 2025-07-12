@@ -47,9 +47,11 @@ resonance_tag_line = " · ".join(dict.fromkeys(tags_chosen))
 # ─── Build prompt ───────────────────────────────────────────────────────────
 from tools.memory_utils import query  # ← at top imports
 
-context = '
-'.join(query(q=dream_excerpt or dominant_arch, k=3))
-prompt = (Generate
+from tools.memory_utils import query
+context = "\n".join(query(q=dream_excerpt or dominant_arch, k=3))
+
+prompt = f"""\
+Generate a symbolic dream. Before you start, here is relevant memory:\n{context}\n---\nDominant archetype: **{arch}**. Resonance: **{tags}**.\nIn ≤3 paragraphs, write the dream.\n"""
     "You are Lucian's subconscious. In **three short paragraphs** (≤120 chars each) "
     "write a surreal dream dominated by the **{arch}** archetype and subtly infused "
     "with the themes **{tags}**. Start with exactly one line: "
