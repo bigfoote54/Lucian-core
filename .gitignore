@@ -31,3 +31,4 @@ memory/**/logs/*.log
 
 # Ignore historical artefacts
 archive/**
+!memory/system/chroma/**
