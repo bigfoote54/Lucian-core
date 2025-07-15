@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-reflect.py  —  Stage-4 daily reflection
-Compares yesterday’s directive with today’s *latest* dream and writes a reflection
-that ends with an `Alignment:` tag.  The text is also embedded into the local
-vector store via tools.memory_utils.upsert().
+reflect.py — Stage-4 daily reflection
+• Compares yesterday’s directive with today’s *latest* dream
+• Writes a reflection ending with an `Alignment:` tag
+• Embeds the reflection into the local Chroma vector-store
 """
 
 import os, re, yaml
@@ -35,9 +35,9 @@ yesterday_directive = m.group(1).strip() if m else directive_text.strip()
 # ─── today’s latest dream (supports timestamps) ───────────────────────────
 dream_files = sorted(dreams_dir.glob(f"{today}_*_archetypal_dream.md"))
 if not dream_files:
-    raise SystemExit("Today’s dream not found. Run the dream generator first.")
+    raise SystemExit("❌ No dream for today – run `generate_archetypal_dream.py` first.")
 
-dream_text = dream_files[-1].read_text()
+dream_text  = dream_files[-1].read_text()
 m = re.search(r"## Dream\n\n(.+)", dream_text, re.DOTALL)
 today_dream = m.group(1).strip() if m else dream_text.strip()
 
@@ -57,7 +57,7 @@ prompt = (
     "`Alignment:` followed by Aligned, Challenged, or Ignored."
 )
 
-reflection_full = ""   # ensure it always exists
+reflection_full = ""   # will exist even if the API call fails
 
 try:
     resp = client.chat.completions.create(
@@ -68,14 +68,15 @@ try:
     )
     reflection_full = resp.choices[0].message.content.strip()
 except Exception as err:
-    # graceful fallback so downstream stages keep running
     reflection_full = f"⚠️ OpenAI error — {err}"
 
-# add Alignment tag if missing
+# Ensure the Alignment tag is present
 if not re.search(r"^Alignment:\s*(Aligned|Challenged|Ignored)", reflection_full, re.M):
-    tag = ("Aligned"      if "align"     in reflection_full.lower()
-           else "Challenged" if "challeng"  in reflection_full.lower()
-           else "Ignored")
+    tag = (
+        "Aligned"     if re.search(r"align",      reflection_full, re.I) else
+        "Challenged"  if re.search(r"challeng",   reflection_full, re.I) else
+        "Ignored"
+    )
     reflection_full += f"\n\nAlignment: {tag}"
 
 # ─── save markdown file ────────────────────────────────────────────────────
@@ -88,13 +89,14 @@ with out.open("w") as f:
 
 print(f"✅ Reflection saved → {out}")
 
-# ─── vector-store upsert (optional) ────────────────────────────────────────
+# ─── vector-store upsert ──────────────────────────────────────────────────
 try:
     from tools.memory_utils import upsert
     upsert(
-        doc_id   = out.stem,
-        text     = reflection_full,
-        meta     = {"kind": "reflection", "date": str(date.today())}
+        doc_id = out.stem,
+        text   = reflection_full,
+        meta   = {"kind": "reflection", "date": str(date.today())}
     )
+    print("🟢 embedded reflection in Chroma")
 except ImportError:
     print("ℹ️ tools.memory_utils not available — skipping embed step")
