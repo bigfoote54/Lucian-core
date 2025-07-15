@@ -80,4 +80,7 @@ with out.open("w") as f:
     f.write(f"## Today’s Dream Fragment\n\n{today_dream[:400]} …\n\n")
     f.write(reflection + "\n")
 
+from tools.memory_utils import upsert
+upsert(doc_id=out.stem, text=reflection_full, meta={"kind":"reflection","date":"$(date -u +%Y-%m-%d)"})
+
 print(f"✅ Reflection saved → {out}")
