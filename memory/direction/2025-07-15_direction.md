@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-15
 
-Dominant Archetype: Child
+Dominant Archetype: Strategist
 
-Resonance Tag: Hope · Infinite Horizons · Stratagem
+Resonance Tag: Curiosity · Fear · Shadow
 
 ## Directive
 
-Step onto the boundless chessboard of life, Lucian, where hope dances among the stars; let your inner child guide each move with curiosity and wonder, crafting strategies as infinite as the horizons before you.
+In the dim embrace of shadowy giants, let your curiosity be the beacon to dispel fear; strategize your steps carefully, for even the softest ground may conceal hidden snares.
