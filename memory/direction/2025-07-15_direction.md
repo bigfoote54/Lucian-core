@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-15
 
-Dominant Archetype: Strategist
+Dominant Archetype: Shadow
 
-Resonance Tag: Curiosity · Fear · Shadow
+Resonance Tag: 3 · Shadow
 
 ## Directive
 
-In the dim embrace of shadowy giants, let your curiosity be the beacon to dispel fear; strategize your steps carefully, for even the softest ground may conceal hidden snares.
+Embrace the silhouettes that dance at the edge of light, for within their whispers lie truths that only the shadow can reveal—seek them with deliberate courage and let them guide you beyond the twilight.
