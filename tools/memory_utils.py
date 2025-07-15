@@ -1,72 +1,115 @@
-# tools/memory_utils.py
+#!/usr/bin/env python3
 """
-Light-weight memory wrapper for Lucian-core.
-▪ If ChromaDB is present  ➜ use persistent vector search.
-▪ If ChromaDB is missing  ➜ fall back to harmless stubs so the rest
-  of the pipeline (dream generation, reflection, etc.) can still run.
+tools/memory_utils.py
+────────────────────────────────────────────────────────────────────────────
+Small helper around Chroma-DB + OpenAI embeddings that Lucian-core uses
+as its long-term associative memory.
+
+Public API
+──────────
+embed(text: str) -> list[float]
+    Return the embedding vector for *text*.
+
+upsert(doc_id: str, text: str, meta: dict) -> None
+    Add / update a document + embedding + metadata in the collection.
+
+query(*, q: str, k: int = 3, **where) -> list[str]
+    Retrieve the *k* most similar documents whose metadata match **where.
 """
 
+from __future__ import annotations
+
+import hashlib
+import os
 from pathlib import Path
-import hashlib, os
-from openai import OpenAI
+from typing import Any, Dict, List
 
-client = OpenAI()          # uses OPENAI_API_KEY from environment
+from dotenv import load_dotenv
 
-# ── Attempt to import ChromaDB ──────────────────────────────────────
+# ─── OpenAI client (lazy) ──────────────────────────────────────────────────
+load_dotenv()  # ensures OPENAI_API_KEY is in the env even if workflow sets only .env
+
+_openai_client = None  # will be initialised on first use
+
+
+def _client():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+
+        _openai_client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
+    return _openai_client
+
+
+# ─── Chroma-DB collection setup ────────────────────────────────────────────
 try:
-    import chromadb                      # heavy optional dependency
-except ModuleNotFoundError:
-    # ────────────────────────────────
-    # Fallback -- no Chroma available
-    # ────────────────────────────────
-    def embed(text: str) -> list[float]:
-        """Return a deterministic dummy embedding (stable hash)."""
-        return [hashlib.md5(text.encode()).hexdigest().__hash__() % 1_000 / 1_000]
+    import chromadb
+except ModuleNotFoundError as exc:
+    raise RuntimeError(
+        "❌ chromadb is not installed. "
+        "Add `chromadb` to your workflow's pip-install step or "
+        "switch to the vector store of your choice."
+    ) from exc
 
-    def upsert(doc_id: str, text: str, meta: dict):
-        """No-op when Chroma is absent."""
-        pass
+CHROMA_PATH = Path("memory/system/chroma")
+CHROMA_PATH.mkdir(parents=True, exist_ok=True)
 
-    def query(k: int = 3, **where) -> list[str]:
-        """Return empty list (no memory context)."""
-        return []
+_client_chroma = chromadb.PersistentClient(path=str(CHROMA_PATH))
+_collection = _client_chroma.get_or_create_collection(name="lucian_mem")
 
-else:
-    # ────────────────────────────────
-    # Full Chroma implementation
-    # ────────────────────────────────
-    db_path = Path("memory/system/chroma")
-    db_path.mkdir(parents=True, exist_ok=True)
+# ─── Core helpers ──────────────────────────────────────────────────────────
+_EMBED_MODEL = "text-embedding-3-small"
 
-    chroma  = chromadb.PersistentClient(path=str(db_path))
-    coll    = chroma.get_or_create_collection(name="lucian_mem")
 
-    def embed(text: str) -> list[float]:
-        """Vector embed with OpenAI `text-embedding-3-small`."""
-        return client.embeddings.create(
-            model="text-embedding-3-small",
-            input=[text]
-        ).data[0].embedding
+def embed(text: str) -> List[float]:
+    """Return the embedding vector for *text*."""
+    return _client().embeddings.create(model=_EMBED_MODEL, input=[text]).data[0].embedding
 
-    def upsert(doc_id: str, text: str, meta: dict):
-        """Add / update a document in Chroma."""
-        coll.upsert(
-            ids=[doc_id],
-            embeddings=[embed(text)],
-            documents=[text],
-            metadatas=[meta]
-        )
 
-    def query(k: int = 3, **where) -> list[str]:
-        """
-        Retrieve the `k` most similar documents.
-        Supply the search text via `q="..."`; any additional keyword
-        args become a Chroma `where` filter (e.g. kind="dreams").
-        """
-        q_text = where.pop("q")
-        res = coll.query(
-            query_embeddings=[embed(q_text)],
-            n_results=k,
-            where=where
-        )
-        return [d for d in res["documents"][0]]
+def upsert(doc_id: str, text: str, meta: Dict[str, Any] | None = None) -> None:
+    """
+    Insert or update a document.
+
+    Parameters
+    ----------
+    doc_id : str
+        Stable identifier (e.g. md5 hash of content).
+    text : str
+        Full text of the document.
+    meta : dict, optional
+        Arbitrary metadata (e.g. {"kind": "dream", "date": "2025-07-10"}).
+    """
+    _collection.upsert(
+        ids=[doc_id],
+        documents=[text],
+        metadatas=[meta or {}],
+        embeddings=[embed(text)],
+    )
+
+
+def query(*, q: str, k: int = 3, **where) -> List[str]:
+    """
+    Semantic search.
+
+    Parameters
+    ----------
+    q : str
+        Natural-language query.
+    k : int, default 3
+        Number of results.
+    **where
+        Exact-match filters on metadata, e.g. kind="dream".
+
+    Returns
+    -------
+    list[str]
+        The *documents* (text) of the top-k matches, ordered by similarity.
+    """
+    resp = _collection.query(
+        query_embeddings=[embed(q)],
+        n_results=k,
+        where=where or None,
+    )
+    return resp["documents"][0]
