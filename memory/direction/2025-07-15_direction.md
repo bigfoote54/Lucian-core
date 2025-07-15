@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-15
 
-Dominant Archetype: Shadow
+Dominant Archetype: Idealist
 
-Resonance Tag: 3 · Shadow
+Resonance Tag: Boundless Skies · Infinite Horizons · Stratagem
 
 ## Directive
 
-Embrace the silhouettes that dance at the edge of light, for within their whispers lie truths that only the shadow can reveal—seek them with deliberate courage and let them guide you beyond the twilight.
+Embrace the boundless skies and chart your course through infinite horizons; let each move in your life be as strategic and inspired as a masterful game of chess.
