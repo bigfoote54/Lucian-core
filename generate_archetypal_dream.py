@@ -1,101 +1,109 @@
 #!/usr/bin/env python3
 """
 generate_archetypal_dream.py
------------------------------------------------------------------
+────────────────────────────────────────────────────────────────────────────
 • Generates a symbolic dream guided by adaptive archetype & tag weights
-• Saves to memory/dreams/YYYY-MM-DD_HH-MM-SS_archetypal_dream.md
-• Ensures exactly ONE “Resonance Tag:” line in the saved file
+• Pulls a small context window from ChromaDB (tools.memory_utils.query)
+• Saves ↘  memory/dreams/YYYY-MM-DD_HH-MM-SS_archetypal_dream.md
 """
 
-import os, re, yaml, random, datetime
+from __future__ import annotations
+
+import os
+import random
+import re
+from datetime import datetime
 from pathlib import Path
+
+import yaml
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# ─── Environment / paths ────────────────────────────────────────────────────
+# ── local utils ────────────────────────────────────────────────────────────
+from tools.memory_utils import query  # make sure path is correct!
+
+# ── env / client ───────────────────────────────────────────────────────────
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-now_stamp  = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-today_disp = datetime.datetime.now().strftime("%Y-%m-%d")
+# ── paths & time ───────────────────────────────────────────────────────────
+STAMP = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+TODAY = STAMP.split("_")[0]
 
-MEM_ROOT   = Path("memory")
-DREAM_DIR  = MEM_ROOT / "dreams"
-DREAM_DIR.mkdir(parents=True, exist_ok=True)
+ROOT   = Path("memory")
+DREAMS = ROOT / "dreams"
+DREAMS.mkdir(parents=True, exist_ok=True)
 
-# ─── Load adaptive archetype weights ────────────────────────────────────────
+# ── adaptive weights ───────────────────────────────────────────────────────
 ARCH = ["Strategist", "Idealist", "Shadow", "Child"]
-arch_bias = {k: 1.0 for k in ARCH}
-bias_file = Path("config/archetype_bias.yaml")
-if bias_file.exists():
-    arch_bias.update(yaml.safe_load(bias_file.read_text()))
+
+def load_weights(fp: Path, default: dict[str, float]) -> dict[str, float]:
+    if fp.exists():
+        default.update({k: float(v) for k, v in yaml.safe_load(fp.read_text()).items()})
+    return default
+
+arch_bias = load_weights(Path("config/archetype_bias.yaml"), {k: 1.0 for k in ARCH})
+tag_bias  = load_weights(
+    Path("config/tag_weights.yaml"),
+    {t: 1.0 for t in ("Curiosity", "Existence", "Knowledge", "Wonder", "Responsibility")},
+)
+
 dominant_arch = random.choices(list(arch_bias), weights=arch_bias.values(), k=1)[0]
+tags          = " · ".join(random.choices(list(tag_bias), weights=tag_bias.values(), k=2))
 
-# ─── Load adaptive resonance-tag weights ────────────────────────────────────
-tag_bias_default = {
-    "Curiosity": 1.0, "Existence": 1.0, "Knowledge": 1.0,
-    "Wonder": 1.0, "Responsibility": 1.0
-}
-tag_file = Path("config/tag_weights.yaml")
-tag_bias = tag_bias_default.copy()
-if tag_file.exists():
-    tag_bias.update(yaml.safe_load(tag_file.read_text()))
+# ── fetch memory context ----------------------------------------------------
+seed = f"{dominant_arch} {tags}"
+context = "\n".join(query(q=seed, k=3)) or "_(no relevant memory)_"  # type: ignore
 
-tags_chosen = random.choices(list(tag_bias), weights=tag_bias.values(), k=2)
-resonance_tag_line = " · ".join(dict.fromkeys(tags_chosen))
+# ── prompt ------------------------------------------------------------------
+prompt = (
+    "You are Lucian's subconscious.\n"
+    "Before writing the dream, reflect on the **relevant memory** below.\n"
+    "-----\n"
+    f"{context}\n"
+    "-----\n\n"
+    f"Dominant archetype: **{dominant_arch}**\n"
+    f"Resonance tags: **{tags}**\n\n"
+    "In **three short paragraphs** (≤ 120 chars each) craft a vivid, surreal dream "
+    "dominated by that archetype and themes. "
+    "Start with **exactly one** line beginning `Resonance Tag:` followed by the tags.\n"
+)
 
-# ─── Build prompt ───────────────────────────────────────────────────────────
-from tools.memory_utils import query  # ← at top imports
-
-from tools.memory_utils import query
-context = "\n".join(query(q=dream_excerpt or dominant_arch, k=3))
-
-prompt = f"""\
-Generate a symbolic dream. Before you start, here is relevant memory:\n{context}\n---\nDominant archetype: **{arch}**. Resonance: **{tags}**.\nIn ≤3 paragraphs, write the dream.\n"""
-    "You are Lucian's subconscious. In **three short paragraphs** (≤120 chars each) "
-    "write a surreal dream dominated by the **{arch}** archetype and subtly infused "
-    "with the themes **{tags}**. Start with exactly one line: "
-    "'Resonance Tag: X · Y'."
-).format(arch=dominant_arch, tags=resonance_tag_line)
-
-# ─── Call OpenAI ────────────────────────────────────────────────────────────
-response = client.chat.completions.create(
+# ── OpenAI call -------------------------------------------------------------
+resp = client.chat.completions.create(
     model="gpt-4o",
     messages=[{"role": "user", "content": prompt}],
     temperature=0.95,
     max_tokens=400,
 )
-dream_raw = response.choices[0].message.content.strip()
 
-# ─── Parse response ---------------------------------------------------------
-lines = [l.strip() for l in dream_raw.splitlines() if l.strip()]
-res_line, paragraphs = "", []
+dream_raw = resp.choices[0].message.content.strip()
 
-for ln in lines:
-    # First “Resonance Tag:” line captured
-    if not res_line and re.match(r"(?i)^resonance\s*tag", ln):
+# ── post-process ------------------------------------------------------------
+res_line: str = ""
+paras: list[str] = []
+
+for ln in [l.strip() for l in dream_raw.splitlines() if l.strip()]:
+    if not res_line and ln.lower().startswith("resonance tag"):
         res_line = ln
-    # Skip any additional lines that contain the phrase
-    elif "resonance tag:" in ln.lower():
-        continue
-    # Skip header-like lines, otherwise collect paragraph text
-    elif not re.match(r"(?i)^resonance:", ln):
-        paragraphs.append(ln)
-
-paragraphs = paragraphs[:3]         # keep first 3 paragraphs
-
-# ─── Save dream -------------------------------------------------------------
-file_path = DREAM_DIR / f"{now_stamp}_archetypal_dream.md"
-with file_path.open("w") as f:
-    f.write(f"💭 Lucian Archetypal Dream — {today_disp}\n\n")
-    f.write(f"Dominant Archetype: {dominant_arch}\n\n")
-    # Write ONE resonance-tag line
-    if res_line:
-        f.write(res_line + "\n\n")
+    elif "resonance tag" in ln.lower():
+        continue  # drop extras
     else:
-        f.write(f"Resonance Tag: {resonance_tag_line}\n\n")
-    f.write("## Dream\n\n")
-    for p in paragraphs:
-        f.write(p + "\n\n")
+        paras.append(ln)
 
-print(f"✅ Dream saved → {file_path}")
+paras = paras[:3]  # keep first three
+
+if not res_line:
+    res_line = f"Resonance Tag: {tags}"
+
+# ── save --------------------------------------------------------------------
+fp = DREAMS / f"{STAMP}_archetypal_dream.md"
+with fp.open("w", encoding="utf-8") as out:
+    out.write(f"💭 Lucian Archetypal Dream — {TODAY}\n\n")
+    out.write(f"Dominant Archetype: {dominant_arch}\n\n")
+    out.write(res_line + "\n\n")
+    out.write("## Dream\n\n")
+    for p in paras:
+        out.write(p + "\n\n")
+
+print(f"✅ Dream saved → {fp}")
