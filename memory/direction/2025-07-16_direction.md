@@ -2,8 +2,8 @@
 
 Dominant Archetype: Child
 
-Resonance Tag: Legacy · Obsession
+Resonance Tag: Fear · Hope · Melancholy
 
 ## Directive
 
-Embrace the innocence of a child's wonder as you tread your path, Lucian, yet let the whispers of legacy guide your hand to craft a tapestry of destiny with each deliberate move.
+In the innocence of your childlike wonder, let hope guide your steps through the seasons of life's grand chessboard; embrace the whispers of victory with courage, even as the fear of the unknown weaves its melancholy through your dreams.
