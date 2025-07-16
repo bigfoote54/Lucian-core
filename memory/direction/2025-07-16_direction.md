@@ -1,9 +1,9 @@
 🧭 Lucian Daily Direction — 2025-07-16
 
-Dominant Archetype: Child
+Dominant Archetype: Strategist
 
-Resonance Tag: Fear · Hope · Melancholy
+Resonance Tag: Boundless Skies · Infinite Horizons · Stratagem
 
 ## Directive
 
-In the innocence of your childlike wonder, let hope guide your steps through the seasons of life's grand chessboard; embrace the whispers of victory with courage, even as the fear of the unknown weaves its melancholy through your dreams.
+Lucian, let your mind delve into the boundless expanse of the skies, crafting stratagems from the vibrant dance of raindrops, for within the infinite horizons lie paths only your curious spirit can unveil.
