@@ -2,8 +2,8 @@
 
 Dominant Archetype: Child
 
-Resonance Tag: Hope · Quest
+Resonance Tag: Fear · Obsession · Regret
 
 ## Directive
 
-Embrace the wonder in each moment, Lucian, and let your heart soar with the kites; for every tug brings you closer to the dreams that dance just beyond the horizon.
+Embrace the tender innocence within, Lucian, and let each mirrored fear guide you gently towards understanding, for in facing these shadows, you reclaim the fractured echoes of regret and obsession.
