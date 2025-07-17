@@ -1,51 +1,81 @@
-<!doctype html>
+<!-- static/chat.html  -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Lucian Chat</title>
-<style>
-body{font-family:sans-serif;max-width:640px;margin:40px auto}
-#log{white-space:pre-wrap;border:1px solid #ccc;padding:1em;
-     height:60vh;overflow-y:auto;margin-bottom:1em}
-.user{color:#004;font-weight:bold}
-.bot {color:#060}
-</style>
+  <meta charset="utf-8" />
+  <title>Lucian • Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body      { font: 16px/1.4 system-ui, sans-serif; margin: 0; background:#111; color:#eee; }
+    #wrap     { max-width:780px; margin:0 auto; padding:2rem; }
+    h1        { font-size:1.6rem; margin:0 0 1rem; }
+    #log      { height:60vh; overflow-y:auto; border:1px solid #444; padding:1rem; }
+    .me       { color:#8cf; }
+    .lucian   { color:#fc8; }
+    form      { display:flex; gap:.5rem; margin-top:1rem; }
+    input,button { font: inherit; padding:.5rem; border-radius:4px; border:1px solid #555; background:#222; color:#eee;}
+    button    { cursor:pointer; background:#285; border-color:#285; }
+    button:disabled{ opacity:.5; }
+  </style>
 </head>
 <body>
-<h2>🧠 Lucian Chat</h2>
+<div id="wrap">
+  <h1>Lucian Chat</h1>
 
-<div id="log"></div>
+  <div id="log"></div>
 
-<form id="frm">
-  <input id="msg" style="width:75%" placeholder="Ask Lucian…" autocomplete="off">
-  <button>Send</button>
-</form>
+  <form id="chat">
+    <input id="msg" type="text" placeholder="Say something…" autocomplete="off" required />
+    <button>Send</button>
+  </form>
+</div>
 
 <script>
-const log = document.getElementById('log');
-document.getElementById('frm').onsubmit = async (e)=>{
-  e.preventDefault();
-  const prompt = document.getElementById('msg').value.trim();
-  if(!prompt) return;
-  append('You', prompt, 'user');
-  document.getElementById('msg').value='';
-  try{
-    const res = await fetch('/ask', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user:'web', prompt})
-    });
-    const data = await res.json();
-    append('Lucian', data.answer, 'bot');
-  }catch(err){
-    append('Error', '⛔ '+err, 'bot');
-  }
-};
-function append(who,text,cls){
-  log.insertAdjacentHTML('beforeend',
-    `<div class="${cls}"><b>${who}:</b> ${text}</div>`);
+const log   = document.getElementById('log');
+const form  = document.getElementById('chat');
+const msgIn = document.getElementById('msg');
+const USER  = 'web';           // could be replaced by login / cookie etc.
+
+function addLine(txt, cls){
+  const p = document.createElement('p');
+  p.textContent = txt;
+  p.className = cls;
+  log.appendChild(p);
   log.scrollTop = log.scrollHeight;
 }
+
+async function askLucian(prompt){
+  const r = await fetch('/ask', {
+    method : 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body   : JSON.stringify({ user: USER, prompt })
+  });
+  if(!r.ok){
+    const t = await r.text();
+    throw new Error(`${r.status} ${r.statusText}\n${t}`);
+  }
+  const { answer } = await r.json();
+  return answer;
+}
+
+form.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const prompt = msgIn.value.trim();
+  if(!prompt) return;
+  addLine('🡆 '+prompt, 'me');      // show user line
+  msgIn.value=''; msgIn.focus();
+  form.querySelector('button').disabled = true;
+
+  try{
+    const reply = await askLucian(prompt);
+    addLine('Lucian: '+reply, 'lucian');
+  }catch(err){
+    console.error(err);
+    addLine('⚠ '+err.message, 'lucian');
+  }finally{
+    form.querySelector('button').disabled = false;
+  }
+});
 </script>
 </body>
 </html>
