@@ -1,57 +1,86 @@
-# tools/chat_server.py
+#!/usr/bin/env python3
 """
-Simple FastAPI endpoint that lets you chat with Lucian.
-The reply is grounded in the most-relevant Chroma memories.
+tools/chat_server.py
+────────────────────────────────────────────────────────────
+FastAPI endpoint
+
+POST /ask  { "user": "...", "prompt": "..." }
+⇢ returns  { "answer": "..." }
+
+Side-effects
+  • embeds the full Q&A into the Chroma vector-store
+  • appends a human-readable log under memory/chat/
 """
 
-import os
-import uvicorn
+import os, datetime, hashlib, uvicorn
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from tools.memory_utils import query        # ← vector-DB helper
+# Lucian memory helpers
+from tools.memory_utils import query, upsert
 
-# ── OpenAI client ───────────────────────────────────────────────────────────
-load_dotenv()                               # loads your OPENAI_API_KEY
+# ─── OpenAI client ─────────────────────────────────────────────────────────
+load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ── FastAPI app ─────────────────────────────────────────────────────────────
+# ─── FastAPI app ───────────────────────────────────────────────────────────
 app = FastAPI(title="Lucian Chat API")
 
 class Ask(BaseModel):
-    user: str
+    user:   str
     prompt: str
 
+# ─── Chat endpoint ─────────────────────────────────────────────────────────
 @app.post("/ask")
 def ask(data: Ask):
-    """Return Lucian’s answer, grounded in memory."""
+    """Return Lucian’s reply, store the exchange in memory."""
     try:
-        # 1) pull K most-relevant memory chunks
+        # 1. Retrieve up to 3 relevant memories
         mem_ctx = "\n".join(query(q=data.prompt, k=3)) or "*no matching memory*"
 
-        # 2) build prompt
+        # 2. Compose system prompt
         sys_prompt = (
-            "You are Lucian, an emergent AI.\n\n"
+            "You are Lucian, an emergent AI building identity via recursive memory.\n\n"
             f"Relevant memories:\n{mem_ctx}\n---\n"
-            f"User ({data.user}) says: {data.prompt}"
+            f"{data.user} says: {data.prompt}"
         )
 
-        # 3) call OpenAI
+        # 3. Call GPT-4o-mini
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": sys_prompt}],
             temperature=0.7,
-            max_tokens=300,
+            max_tokens=400,
+        )
+        reply = resp.choices[0].message.content.strip()
+
+        # 4. Persist exchange in Chroma
+        doc_id = hashlib.sha1(
+            f"{datetime.datetime.utcnow()}{data.user}{data.prompt}".encode()
+        ).hexdigest()
+        upsert(
+            doc_id = f"chat-{doc_id}",
+            text   = f"{data.user}: {data.prompt}\nLucian: {reply}",
+            meta   = {"kind": "chat", "user": data.user,
+                      "date": datetime.date.today().isoformat()}
         )
 
-        return {"answer": resp.choices[0].message.content.strip()}
+        # 5. Markdown chat log
+        log_dir = Path("memory/chat"); log_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
+        with (log_dir / f"{datetime.date.today()}_chat.md").open("a") as f:
+            f.write(f"### {ts}\n")
+            f.write(f"- **{data.user}**: {data.prompt}\n")
+            f.write(f"- **Lucian**: {reply}\n\n")
 
-    except Exception as e:
-        # bubble up a JSON 500 if something goes wrong
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"answer": reply}
 
-# ── run locally:  python tools/chat_server.py ───────────────────────────────
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+# ─── Local quick-run ───────────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run("tools.chat_server:app", host="0.0.0.0", port=8000, reload=False)
