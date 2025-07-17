@@ -2,3 +2,5 @@ openai>=1.13
 python-dotenv
 pyyaml
 chromadb
+fastapi
+uvicorn
