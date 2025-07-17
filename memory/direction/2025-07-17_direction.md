@@ -2,8 +2,8 @@
 
 Dominant Archetype: Child
 
-Resonance Tag: Fear · Obsession · Regret
+Resonance Tag: 3 · Obsession · Transformation
 
 ## Directive
 
-Embrace the tender innocence within, Lucian, and let each mirrored fear guide you gently towards understanding, for in facing these shadows, you reclaim the fractured echoes of regret and obsession.
+Embrace the transformative prism of your kaleidoscope vision, Lucian, and let your childlike wonder drive the relentless pursuit of your obsessions, reshaping them into vibrant realities.
