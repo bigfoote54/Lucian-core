@@ -1,57 +1,81 @@
 #!/usr/bin/env python3
 """
-orchestrator.py
-Runs Lucian’s daily pipeline end-to-end, logs every stage, retries once on failure,
-and records a run report in memory/system/logs/YYYY-MM-DD.json.
+tools/orchestrator.py
+─────────────────────────────────────────────────────────────────────────────
+Central runner that coordinates Lucian-core’s daily stages.
+
+Order:
+  1. generate_archetypal_dream.py   → memory/dreams/
+  2. reflect.py                     → memory/reflection/
+  3. generate_direction.py          → memory/direction/
+  4. adapt_weights.py               → config/archetype_bias.yaml
+  5. adapt_resonance.py             → config/tag_weights.yaml
+  6. append_journal.py              → memory/journal/   (optional ❔)
+  7. generate_output.py             → memory/output/    (optional ❔)
+  8. generate_core_node.py          → memory/graph/     (optional ❔)
 """
 
-import subprocess, json, traceback, time
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
+import subprocess, sys, time, textwrap
 
+# ─── configuration ─────────────────────────────────────────────────────────
 STAGES = [
-    ("journal",    ["python3", "generate_journal.py"]),      # optional – comment out if not used
-    ("dream",      ["python3", "generate_archetypal_dream.py"]),
-    ("reflect",    ["python3", "reflect.py"]),
-    ("direction",  ["python3", "generate_direction.py"]),
-    ("weekly",     ["python3", "generate_weekly_report.py"]), # runs, but is a no-op 6/7 days
+    ("💭 dream",         "generate_archetypal_dream.py"),
+    ("🪞 reflect",       "reflect.py"),
+    ("🧭 direction",     "generate_direction.py"),
+    ("⚖️  adapt-weights","adapt_weights.py"),
+    ("🎚 adapt-tags",    "adapt_resonance.py"),
+    # optional extras (leave them in even if they noop – they’ll be skipped
+    # gracefully when the files don’t exist)
+    ("📓 journal",       "append_journal.py"),
+    ("🎬 output",        "generate_output.py"),
+    ("🕸 core-node",     "generate_core_node.py"),
 ]
 
-LOG_DIR = Path("memory/system/logs"); LOG_DIR.mkdir(parents=True, exist_ok=True)
-run_id  = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-report  = {"run_id": run_id, "stages": [], "status": "started", "started": run_id}
+RETRY_LIMIT = 1               # number of *additional* attempts on failure
+LOG_DIR     = Path("memory/system/logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE    = LOG_DIR / f"{datetime.utcnow():%Y-%m-%dT%H-%M-%SZ}_orchestrator.log"
 
-def run_stage(name, cmd, attempt=1):
-    t0 = time.time()
+# ─── helpers ───────────────────────────────────────────────────────────────
+def log(msg: str):
+    print(msg)
+    LOG_FILE.write_text(LOG_FILE.read_text() + msg + "\n" if LOG_FILE.exists() else msg + "\n")
+
+def run_stage(label: str, script: str):
+    """Run a stage, retrying up to RETRY_LIMIT on non-zero exit."""
+    if not Path(script).exists():
+        log(f"⚠️  {label:12} — skipped (missing {script})")
+        return
+
+    for attempt in range(RETRY_LIMIT + 1):
+        cmd = ["python3", script]
+        log(f"▶️  {label:12} — running: {' '.join(cmd)} (try {attempt+1})")
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        log(res.stdout)
+        if res.returncode == 0:
+            log(f"✅ {label:12} — success\n")
+            return
+        log(f"❌ {label:12} — exit {res.returncode}\n{res.stderr}")
+        if attempt < RETRY_LIMIT:
+            time.sleep(3)      # brief back-off
+    # after retries
+    raise RuntimeError(f"{label} failed after {RETRY_LIMIT+1} attempts")
+
+# ─── main loop ─────────────────────────────────────────────────────────────
+def main():
+    log(f"🛫 Orchestrator started {datetime.utcnow():%Y-%m-%d %H:%M:%S}Z\n")
+
     try:
-        subprocess.check_call(cmd)
-        status = "success"
-    except subprocess.CalledProcessError as e:
-        if attempt == 1:
-            print(f"⚠️  {name} failed (retrying once) → {e}")
-            return run_stage(name, cmd, attempt=2)
-        status = f"error({e.returncode})"
-    finally:
-        report["stages"].append({
-            "name": name,
-            "status": status,
-            "duration_s": round(time.time() - t0, 1)
-        })
-    if status.startswith("error"):
-        raise RuntimeError(f"{name} failed")
+        for label, script in STAGES:
+            run_stage(label, script)
+    except Exception as e:
+        log(f"🛑 Orchestrator aborted — {e}")
+        sys.exit(1)
 
-for stage_name, stage_cmd in STAGES:
-    try:
-        run_stage(stage_name, stage_cmd)
-    except Exception:
-        report["status"] = "failed"
-        report["error"]  = traceback.format_exc()
-        break
-else:
-    report["status"] = "success"
+    log("🏁 Orchestrator finished OK")
+    sys.exit(0)
 
-report["ended"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-(Path(LOG_DIR) / f"{run_id}.json").write_text(json.dumps(report, indent=2))
-print(f"🗒️  Orchestrator run finished → {LOG_DIR}/{run_id}.json")
-if report["status"] != "success":
-    exit(1)
+if __name__ == "__main__":
+    main()
