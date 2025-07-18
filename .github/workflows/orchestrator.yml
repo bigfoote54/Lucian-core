@@ -51,14 +51,22 @@ jobs:
       shell: bash
       run: |
         git config user.name  "lucian-bot"
-        git config user.email "lucian@bot.com"
-        git add memory/dreams/*.md memory/reflection/*.md memory/direction/*.md \
-                memory/journal/*.md memory/core_nodes/*.md config/*.yaml
-        if git diff --staged --quiet; then echo "Nothing new to commit."; exit 0; fi
+        git config user.email "lucian@bot.com.      
+        git add memory/dreams/*.md \
+                memory/reflection/*.md \
+                memory/direction/*.md \
+                memory/journal/*.md \
+                memory/core_nodes/*.md \
+                memory/chat/*.md \        # ← NEW: commit chat logs
+                config/*.yaml
+
+        if git diff --staged --quiet; then
+          echo "Nothing new to commit."; exit 0;
+        fi
+
         git commit -m "🧠 orchestration artefacts $(date -u +'%Y-%m-%dT%H:%MZ')"
         git pull --rebase --autostash origin main
         git push origin HEAD:main
-
     # ── 7 · Upload Chroma DB for next run ──────────────────────────────
     - name: ⬆️  Upload Chroma DB for next run
       if: always()                     # ← run even on failure
