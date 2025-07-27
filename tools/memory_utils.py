@@ -81,10 +81,12 @@ def upsert(doc_id: str, text: str, meta: Dict[str, Any] | None = None) -> None:
     meta : dict, optional
         Arbitrary metadata (e.g. {"kind": "dream", "date": "2025-07-10"}).
     """
+    if meta is None:
+        meta = {}
     _collection.upsert(
         ids=[doc_id],
         documents=[text],
-        metadatas=[meta or {}],
+        metadatas=[meta],
         embeddings=[embed(text)],
     )
 

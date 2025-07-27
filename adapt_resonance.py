@@ -48,7 +48,7 @@ if TAGS.exists():
 # ── 4. Adjust weights: under-used ↑, over-used ↓ ───────────────────────────
 avg = sum(counts.values()) / len(counts)
 for tag, cnt in counts.items():
-    factor = avg / cnt if cnt else 1.2
+    factor = avg / cnt if cnt > 0 else 1.2
     new_w  = max(MIN_W, min(MAX_W, round(weights.get(tag,1.0)*factor,3)))
     weights[tag] = new_w
 
