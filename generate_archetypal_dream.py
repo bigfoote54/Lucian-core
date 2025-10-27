@@ -107,6 +107,6 @@ with fp.open("w", encoding="utf-8") as out:
         out.write(p + "\n\n")
 
 from tools.memory_utils import upsert
-upsert(doc_id=fp.stem, text="\n".join(paras), meta={"kind":"dream","date":"2025-07-15"})
+upsert(doc_id=fp.stem, text="\n".join(paras), meta={"kind":"dream","date":TODAY})
 
 print(f"✅ Dream saved → {fp}")
