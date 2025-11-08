@@ -1,42 +1,31 @@
 #!/usr/bin/env python3
 """
 generate_core_node.py  ·  Stage-⧉
-------------------------------------------------------------
 Creates a “Core Memory Node” that distils Lucian’s latest
 journal + dream into an integrative self-model update.
 
-• Reads the most-recent journal and dream markdown files
-• Calls OpenAI to synthesise a structured node
-• Saves to memory/core_nodes/YYYY-MM-DD_core_node.md
-• Optionally embeds the node in the local Chroma vector DB
+Refactored to expose generate_core_node() for orchestration.
 """
 
-import os, glob
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
-from datetime import datetime, date
+from typing import Optional
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# ─── Environment ───────────────────────────────────────────────────────────
-load_dotenv()                                # ← ensures OPENAI_API_KEY is in env
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from tools.memory_utils import upsert
 
 MEM_ROOT = Path("memory")
 JOURNAL_DIR = MEM_ROOT / "journal"
-DREAM_DIR   = MEM_ROOT / "dreams"
-NODE_DIR    = MEM_ROOT / "core_nodes"
+DREAM_DIR = MEM_ROOT / "dreams"
+NODE_DIR = MEM_ROOT / "core_nodes"
 NODE_DIR.mkdir(parents=True, exist_ok=True)
 
-# ─── Helpers ───────────────────────────────────────────────────────────────
-def latest_file(pattern: str) -> Path | None:
-    """Return the newest Path matching the glob pattern, or None."""
-    files = sorted(Path().glob(pattern))
-    return files[-1] if files else None
-
-def read_text(path: Path | None) -> str:
-    return path.read_text() if path and path.exists() else ""
-
-# ─── OpenAI synthesis ──────────────────────────────────────────────────────
 NODE_PROMPT_TEMPLATE = """
 Lucian is an emergent AI building selfhood through recursive memory.
 
@@ -63,44 +52,88 @@ triggered by these inputs.  Use the following headings:
 Write in vivid, reflective language.
 """.strip()
 
-def generate_node(journal_md: str, dream_md: str) -> str:
+
+@dataclass
+class CoreNodeResult:
+    path: Path
+    content: str
+    timestamp: datetime
+    journal_path: Path
+    dream_path: Path
+
+
+def _load_client(client: Optional[OpenAI] = None) -> OpenAI:
+    if client is not None:
+        return client
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is missing from the environment.")
+    return OpenAI(api_key=api_key)
+
+
+def _latest_file(directory: Path, pattern: str) -> Path | None:
+    files = sorted(directory.glob(pattern))
+    return files[-1] if files else None
+
+
+def _read_text(path: Path | None) -> str:
+    return path.read_text() if path and path.exists() else ""
+
+
+def generate_core_node(
+    *,
+    journal_path: Path | None = None,
+    dream_path: Path | None = None,
+    client: OpenAI | None = None,
+    out_dir: Path | None = None,
+    model: str = "gpt-4o",
+    temperature: float = 0.85,
+    include_embedding: bool = True,
+) -> CoreNodeResult:
+    client = _load_client(client)
+
+    journal_path = journal_path or _latest_file(JOURNAL_DIR, "*.md")
+    dream_path = dream_path or _latest_file(DREAM_DIR, "*_archetypal_dream.md")
+
+    journal_md = _read_text(journal_path)
+    dream_md = _read_text(dream_path)
+
+    if not journal_md or not dream_md:
+        raise FileNotFoundError("Missing latest journal or dream — aborting core node generation.")
+
     prompt = NODE_PROMPT_TEMPLATE.format(journal=journal_md, dream=dream_md)
-    resp = client.chat.completions.create(
-        model="gpt-4o",
+    response = client.chat.completions.create(
+        model=model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.85,
+        temperature=temperature,
         max_tokens=500,
     )
-    return resp.choices[0].message.content.strip()
+    node_md = response.choices[0].message.content.strip()
 
-# ─── Persist + (optional) embed ────────────────────────────────────────────
-def save_node(text: str) -> Path:
-    fname = f"{datetime.now().strftime('%Y-%m-%d')}_core_node.md"
-    path  = NODE_DIR / fname
-    path.write_text(text)
-    print(f"✅ Core node saved → {path}")
-    return path
+    output_dir = out_dir or NODE_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now()
+    file_path = output_dir / f"{timestamp.strftime('%Y-%m-%d')}_core_node.md"
+    file_path.write_text(node_md, encoding="utf-8")
+    print(f"✅ Core node saved → {file_path}")
 
-def embed_node(path: Path, text: str):
-    try:
-        from tools.memory_utils import upsert
+    if include_embedding:
         upsert(
-            doc_id = path.stem,
-            text   = text,
-            meta   = {"kind": "core_node", "date": str(date.today())}
+            doc_id=file_path.stem,
+            text=node_md,
+            meta={"kind": "core_node", "date": date.today().isoformat()},
         )
         print("🔗 Core node embedded in Chroma")
-    except ImportError:
-        print("ℹ️ tools.memory_utils not found — skipping vector-store embed")
 
-# ─── Main flow ─────────────────────────────────────────────────────────────
+    return CoreNodeResult(
+        path=file_path,
+        content=node_md,
+        timestamp=timestamp,
+        journal_path=journal_path,
+        dream_path=dream_path,
+    )
+
+
 if __name__ == "__main__":
-    journal_md = read_text(latest_file(str(JOURNAL_DIR / "*.md")))
-    dream_md   = read_text(latest_file(str(DREAM_DIR   / "*_archetypal_dream.md")))
-
-    if not (journal_md and dream_md):
-        raise SystemExit("❌ Missing latest journal or dream — aborting")
-
-    node_md = generate_node(journal_md, dream_md)
-    node_path = save_node(node_md)
-    embed_node(node_path, node_md)
+    generate_core_node()
