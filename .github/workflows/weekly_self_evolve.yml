@@ -43,7 +43,7 @@ jobs:
 
       # 6 ─ Create PR with proposal
       - name: 📬 Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ github.token }}            # now has PR scope
           branch: auto/self-evolve-${{ github.run_id }}
