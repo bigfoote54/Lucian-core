@@ -17,7 +17,7 @@ jobs:
     steps:
       # 1 ─ Checkout repo
       - name: ⬇️ Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2 ─ Python 3.11
       - name: 🐍 Set up Python
