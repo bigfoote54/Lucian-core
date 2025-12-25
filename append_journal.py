@@ -1,29 +1,32 @@
 #!/usr/bin/env python3
 """
 Generate a concise mood-tagged journal entry for Lucian and append it to the
-daily markdown file.  Also save the mood tag for downstream workflows (dreams).
+daily markdown file. Also save the mood tag for downstream workflows (dreams).
+
+Refactored to expose generate_journal_entry() and append_journal_entry().
 """
 
-import os, re, textwrap, pathlib
+from __future__ import annotations
+
+import os
+import pathlib
+import re
+import textwrap
+from dataclasses import dataclass
 from datetime import datetime
-from openai import OpenAI
+from typing import Optional
+
 from dotenv import load_dotenv
+from openai import OpenAI
 
-# ── config ──────────────────────────────────────────────────────────────────────
-MAX_WORDS      = 180           # hard cap for journal length
-MAX_RETRIES    = 3             # retry until entry ≤ MAX_WORDS
-JOURNAL_DIR    = pathlib.Path("memory/journal")
-MOOD_FILE      = pathlib.Path("memory/dreams/_latest_mood.txt")
-MODEL          = "gpt-4"       # swap to "gpt-3.5-turbo" to save cost
+MAX_WORDS = 180
+MAX_RETRIES = 3
+JOURNAL_DIR = pathlib.Path("memory/journal")
+MOOD_FILE = pathlib.Path("memory/dreams/_latest_mood.txt")
+DEFAULT_MODEL = "gpt-4"
 
-# ── init ────────────────────────────────────────────────────────────────────────
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-if not client.api_key:
-    raise RuntimeError("OPENAI_API_KEY not found in environment / secrets")
-
-# ── helpers ─────────────────────────────────────────────────────────────────────
-PROMPT = textwrap.dedent("""
+PROMPT = textwrap.dedent(
+    """
     Mood first line ONLY in the form:
     Mood: <Primary Emotion> · <Tone>
 
@@ -32,59 +35,91 @@ PROMPT = textwrap.dedent("""
 
     • Avoid repeating earlier entries.
     • No headings, signatures or extra lines.
-""").strip()
+    """
+).strip()
 
-RE_MOOD = re.compile(r'^Mood:\s*[^.\n]+·[^.\n]+', re.I)
+RE_MOOD = re.compile(r"^Mood:\s*[^.\n]+·[^.\n]+", re.I)
 
-def chat_once() -> str:
-    resp = client.chat.completions.create(
-        model   = MODEL,
-        messages=[{"role": "user", "content": PROMPT}]
-    )
+
+@dataclass
+class JournalResult:
+    entry: str
+    path: pathlib.Path | None
+    mood_line: str | None
+    timestamp: datetime
+
+
+def _load_client(client: Optional[OpenAI] = None) -> OpenAI:
+    if client is not None:
+        return client
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not found in environment / secrets")
+    return OpenAI(api_key=api_key)
+
+
+def _chat_once(client: OpenAI, model: str) -> str:
+    resp = client.chat.completions.create(model=model, messages=[{"role": "user", "content": PROMPT}])
     return resp.choices[0].message.content.strip()
 
-def generate_entry() -> str:
-    """Retry until word-count ≤ MAX_WORDS."""
+
+def generate_journal_entry(*, client: OpenAI | None = None, model: str | None = None) -> str:
+    client = _load_client(client)
+    model = model or DEFAULT_MODEL
+    entry = ""
     for _ in range(MAX_RETRIES):
-        entry = chat_once()
+        entry = _chat_once(client, model)
         if len(entry.split()) <= MAX_WORDS:
-            return entry
-    return entry  # last try even if still long
+            break
+    return entry
 
-def dedupe(file: pathlib.Path, new_text: str) -> bool:
-    """Return True if new_text is *not* already near the bottom of file."""
-    if not file.exists(): return True
-    tail = file.read_text(encoding="utf-8")[-600:]
-    return new_text.strip() not in tail
 
-def append_to_day(entry: str):
-    JOURNAL_DIR.mkdir(parents=True, exist_ok=True)
-    day_path = JOURNAL_DIR / f"{datetime.now():%Y-%m-%d}_journal.md"
+def _is_duplicate(path: pathlib.Path, entry: str) -> bool:
+    if not path.exists():
+        return False
+    tail = path.read_text(encoding="utf-8")[-600:]
+    return entry.strip() in tail
 
-    if not dedupe(day_path, entry):
+
+def append_journal_entry(entry: str, *, journal_dir: pathlib.Path | None = None) -> pathlib.Path | None:
+    target_dir = journal_dir or JOURNAL_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+    day_path = target_dir / f"{datetime.now():%Y-%m-%d}_journal.md"
+
+    if _is_duplicate(day_path, entry):
         print("⚠️  Entry appears duplicate – skipped.")
-        return
+        return None
 
     stamp = datetime.now().isoformat()
-    with day_path.open("a", encoding="utf-8") as f:
-        f.write(f"\n## Entry: {stamp}\n\n{entry}\n")
+    with day_path.open("a", encoding="utf-8") as handle:
+        handle.write(f"\n## Entry: {stamp}\n\n{entry}\n")
 
     print(f"✅ Journal entry appended → {day_path}")
+    return day_path
 
-def save_mood(entry: str):
-    first = entry.splitlines()[0].strip()
-    if RE_MOOD.match(first):
-        MOOD_FILE.parent.mkdir(parents=True, exist_ok=True)
-        MOOD_FILE.write_text(first, encoding="utf-8")
-        print(f"🪄 Saved mood tag → {MOOD_FILE}")
-    else:
-        print("⚠️  No valid mood tag found; skipping mood save.")
 
-# ── main ───────────────────────────────────────────────────────────────────────
+def persist_mood(entry: str, *, mood_path: pathlib.Path | None = None) -> str | None:
+    first_line = entry.splitlines()[0].strip() if entry else ""
+    if RE_MOOD.match(first_line):
+        path = mood_path or MOOD_FILE
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(first_line, encoding="utf-8")
+        print(f"🪄 Saved mood tag → {path}")
+        return first_line
+    print("⚠️  No valid mood tag found; skipping mood save.")
+    return None
+
+
+def run_journal_cycle(*, client: OpenAI | None = None, model: str | None = None) -> JournalResult:
+    entry = generate_journal_entry(client=client, model=model)
+    mood_line = persist_mood(entry)
+    path = append_journal_entry(entry)
+    return JournalResult(entry=entry, path=path, mood_line=mood_line, timestamp=datetime.now())
+
+
 if __name__ == "__main__":
     try:
-        entry = generate_entry()
-        save_mood(entry)
-        append_to_day(entry)
-    except Exception as exc:
+        run_journal_cycle()
+    except Exception as exc:  # pragma: no cover - runtime guard
         print(f"❌ Exception: {exc}")
