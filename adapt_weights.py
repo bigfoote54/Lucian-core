@@ -64,7 +64,9 @@ def adapt_archetype_weights(*, apply: bool = True) -> WeightUpdateResult:
 
     bias = {k: 1.0 for k in ARCH}
     if bias_path.exists():
-        bias.update({k: float(v) for k, v in yaml.safe_load(bias_path.read_text()).items()})
+        loaded = yaml.safe_load(bias_path.read_text())
+        if isinstance(loaded, dict):
+            bias.update({k: float(v) for k, v in loaded.items()})
 
     for archetype in ARCH:
         actual_share = counts[archetype] / total if total else TARGET_SHARE
