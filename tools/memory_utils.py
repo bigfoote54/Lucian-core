@@ -65,7 +65,7 @@ _EMBED_MODEL = "text-embedding-3-small"
 
 def embed(text: str) -> List[float]:
     """Return the embedding vector for *text*."""
-    return _client().embeddings.create(model=_EMBED_MODEL, input=[text]).data[0].embedding
+    return list(_client().embeddings.create(model=_EMBED_MODEL, input=[text]).data[0].embedding)
 
 
 def upsert(doc_id: str, text: str, meta: Dict[str, Any] | None = None) -> None:
@@ -85,7 +85,7 @@ def upsert(doc_id: str, text: str, meta: Dict[str, Any] | None = None) -> None:
         ids=[doc_id],
         documents=[text],
         metadatas=[meta or {}],
-        embeddings=[embed(text)],
+        embeddings=[embed(text)],  # type: ignore[arg-type]
     )
 
 
@@ -108,8 +108,9 @@ def query(*, q: str, k: int = 3, **where) -> List[str]:
         The *documents* (text) of the top-k matches, ordered by similarity.
     """
     resp = _collection.query(
-        query_embeddings=[embed(q)],
+        query_embeddings=[embed(q)],  # type: ignore[arg-type]
         n_results=k,
         where=where or None,
     )
-    return resp["documents"][0]
+    docs = resp["documents"]
+    return docs[0] if docs else []

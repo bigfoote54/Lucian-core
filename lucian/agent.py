@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -99,8 +99,8 @@ class LucianAgent:
         self.config.chat_log_dir.mkdir(parents=True, exist_ok=True)
 
     # ── lifecycle stages ────────────────────────────────────────────────────
-    def dream(self, **kwargs) -> DreamResult:
-        params = {
+    def dream(self, **kwargs: Any) -> DreamResult:
+        params: dict[str, Any] = {
             "client": self.client,
             "include_embedding": self.config.include_embeddings,
             "model": self.config.dream_model,
@@ -109,8 +109,8 @@ class LucianAgent:
         params.update(kwargs)
         return generate_archetypal_dream(**params)
 
-    def reflect(self, **kwargs) -> ReflectionResult:
-        params = {
+    def reflect(self, **kwargs: Any) -> ReflectionResult:
+        params: dict[str, Any] = {
             "client": self.client,
             "include_embedding": self.config.include_embeddings,
             "model": self.config.reflection_model,
@@ -119,8 +119,8 @@ class LucianAgent:
         params.update(kwargs)
         return generate_reflection(**params)
 
-    def direction(self, **kwargs) -> DirectiveResult:
-        params = {
+    def direction(self, **kwargs: Any) -> DirectiveResult:
+        params: dict[str, Any] = {
             "client": self.client,
             "model": self.config.direction_model,
             "temperature": self.config.direction_temperature,
@@ -128,13 +128,13 @@ class LucianAgent:
         params.update(kwargs)
         return generate_direction(**params)
 
-    def journal(self, **kwargs) -> JournalResult:
-        params = {"client": self.client, "model": kwargs.pop("model", self.config.journal_model)}
+    def journal(self, **kwargs: Any) -> JournalResult:
+        params: dict[str, Any] = {"client": self.client, "model": kwargs.pop("model", self.config.journal_model)}
         params.update(kwargs)
         return run_journal_cycle(**params)
 
-    def core_node(self, **kwargs) -> CoreNodeResult:
-        params = {
+    def core_node(self, **kwargs: Any) -> CoreNodeResult:
+        params: dict[str, Any] = {
             "client": self.client,
             "model": self.config.core_node_model,
             "temperature": self.config.core_node_temperature,
@@ -143,7 +143,7 @@ class LucianAgent:
         params.update(kwargs)
         return generate_core_node(**params)
 
-    def daily_output(self, **kwargs) -> DailyOutput:
+    def daily_output(self, **kwargs: Any) -> DailyOutput:
         return generate_daily_output(**kwargs)
 
     def self_evolve(self, *, apply: bool = True) -> SelfEvolveOutcome:
@@ -199,7 +199,7 @@ class LucianAgent:
             temperature=chat_temp,
             max_tokens=self.config.chat_max_tokens,
         )
-        answer = response.choices[0].message.content.strip()
+        answer = (response.choices[0].message.content or "").strip()
         usage = getattr(response, "usage", None)
         total_tokens = getattr(usage, "total_tokens", None)
         timestamp = datetime.utcnow()

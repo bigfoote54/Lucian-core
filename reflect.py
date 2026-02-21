@@ -136,7 +136,7 @@ def generate_reflection(
             temperature=temperature,
             max_tokens=200,
         )
-        reflection_text = response.choices[0].message.content.strip()
+        reflection_text = (response.choices[0].message.content or "").strip()
     except Exception as exc:  # pragma: no cover - network failure path
         log.warning("OpenAI call failed during reflection: %s", exc)
         reflection_text = f"Reflection unavailable — {exc}"

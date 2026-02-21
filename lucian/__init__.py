@@ -12,8 +12,10 @@ heavy ``lucian.agent`` import chain.
 
 from __future__ import annotations
 
+from typing import Any
 
-def __getattr__(name: str):
+
+def __getattr__(name: str) -> Any:
     """Lazy import to break the circular dependency with stage modules."""
     if name in ("AgentConfig", "ChatResult", "CycleResult", "LucianAgent"):
         from .agent import AgentConfig, ChatResult, CycleResult, LucianAgent

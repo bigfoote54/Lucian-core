@@ -54,7 +54,7 @@ class JournalResult:
 
 def _chat_once(client: OpenAI, model: str) -> str:
     resp = client.chat.completions.create(model=model, messages=[{"role": "user", "content": PROMPT}])
-    return resp.choices[0].message.content.strip()
+    return (resp.choices[0].message.content or "").strip()
 
 
 def generate_journal_entry(*, client: OpenAI | None = None, model: str | None = None) -> str:

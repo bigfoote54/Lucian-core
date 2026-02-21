@@ -124,7 +124,7 @@ def generate_archetypal_dream(
         max_tokens=400,
     )
 
-    dream_raw = response.choices[0].message.content.strip()
+    dream_raw = (response.choices[0].message.content or "").strip()
     resonance_line, paragraphs, _ = _parse_response(dream_raw, resonance_tags)
 
     file_path = dream_dir / f"{stamp}_archetypal_dream.md"

@@ -111,7 +111,7 @@ def generate_direction(
         temperature=temperature,
         max_tokens=120,
     )
-    directive_text = response.choices[0].message.content.strip()
+    directive_text = (response.choices[0].message.content or "").strip()
 
     output_dir = out_dir or DIRECTION_DIR
     output_dir.mkdir(parents=True, exist_ok=True)

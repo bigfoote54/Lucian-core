@@ -84,7 +84,7 @@ def generate_core_node(
     journal_md = _read_text(journal_path)
     dream_md = _read_text(dream_path)
 
-    if not journal_md or not dream_md:
+    if not journal_md or not dream_md or not journal_path or not dream_path:
         raise StageFileNotFound("Missing latest journal or dream — aborting core node generation.")
 
     prompt = NODE_PROMPT_TEMPLATE.format(journal=journal_md, dream=dream_md)
@@ -94,7 +94,7 @@ def generate_core_node(
         temperature=temperature,
         max_tokens=500,
     )
-    node_md = response.choices[0].message.content.strip()
+    node_md = (response.choices[0].message.content or "").strip()
 
     output_dir = out_dir or NODE_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
