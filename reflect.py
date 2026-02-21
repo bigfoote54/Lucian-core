@@ -2,7 +2,7 @@
 """
 reflect.py — Stage-4 daily reflection
 
-• Compares yesterday’s directive with today’s *latest* dream
+• Compares yesterday's directive with today's *latest* dream
 • Writes a reflection ending with an `Alignment:` tag
 • Embeds the reflection into the local Chroma vector-store
 • Exposes a reusable generate_reflection() function for orchestration
@@ -10,20 +10,22 @@ reflect.py — Stage-4 daily reflection
 
 from __future__ import annotations
 
-import os
+import logging
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import yaml
-from dotenv import load_dotenv
 from openai import OpenAI
 
+from lucian.constants import ARCHETYPE_BIAS_PATH, DIRECTION_DIR, DREAMS_DIR, MEM_ROOT, REFLECTION_DIR
+from lucian.exceptions import StageFileNotFound
+from lucian.utils import latest_file, load_client
 from tools.memory_utils import upsert
 
-MEM_ROOT = Path("memory")
+log = logging.getLogger("lucian.reflect")
+
 DEFAULT_MODEL = "gpt-4o"
 
 
@@ -46,21 +48,6 @@ class ReflectionResult:
     timestamp: datetime
 
 
-def _load_client(client: Optional[OpenAI] = None) -> OpenAI:
-    if client is not None:
-        return client
-    load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing from the environment.")
-    return OpenAI(api_key=api_key)
-
-
-def _latest_file(directory: Path, pattern: str) -> Path | None:
-    files = sorted(directory.glob(pattern))
-    return files[-1] if files else None
-
-
 def _load_context(
     *,
     dream_path: Path | None,
@@ -69,14 +56,13 @@ def _load_context(
     today_dt = datetime.now().date()
     yesterday_dt = today_dt - timedelta(days=1)
 
-    dreams_dir = MEM_ROOT / "dreams"
-    dir_dir = MEM_ROOT / "direction"
-
-    dream_path = dream_path or _latest_file(dreams_dir, f"{today_dt.strftime('%Y-%m-%d')}_*_archetypal_dream.md")
+    dream_path = dream_path or latest_file(
+        DREAMS_DIR, f"{today_dt.strftime('%Y-%m-%d')}_*_archetypal_dream.md"
+    )
     if not dream_path or not dream_path.exists():
-        raise FileNotFoundError("No dream for today – run `generate_archetypal_dream.py` first.")
+        raise StageFileNotFound("No dream for today – run `generate_archetypal_dream.py` first.")
 
-    resolved_directive = directive_path or dir_dir / f"{yesterday_dt.strftime('%Y-%m-%d')}_direction.md"
+    resolved_directive = directive_path or DIRECTION_DIR / f"{yesterday_dt.strftime('%Y-%m-%d')}_direction.md"
     directive_text = resolved_directive.read_text() if resolved_directive.exists() else "No directive found."
 
     dream_text = dream_path.read_text()
@@ -87,8 +73,7 @@ def _load_context(
     dream_match = re.search(r"## Dream\n\n(.+)", dream_text, re.DOTALL)
     dream_excerpt = dream_match.group(1).strip() if dream_match else dream_text.strip()
 
-    bias_path = Path("config/archetype_bias.yaml")
-    bias_data = yaml.safe_load(bias_path.read_text()) if bias_path.exists() else {}
+    bias_data = yaml.safe_load(ARCHETYPE_BIAS_PATH.read_text()) if ARCHETYPE_BIAS_PATH.exists() else {}
 
     return ReflectionContext(
         today=today_dt,
@@ -100,6 +85,7 @@ def _load_context(
 
 
 def _ensure_alignment_tag(text: str) -> tuple[str, str]:
+    """Ensure the reflection ends with an ``Alignment:`` tag line."""
     alignment_match = re.search(r"^Alignment:\s*(Aligned|Challenged|Ignored)", text, re.MULTILINE)
     if alignment_match:
         return text, alignment_match.group(1)
@@ -128,13 +114,13 @@ def generate_reflection(
     Produce Lucian's daily reflection and persist it to disk.
     """
 
-    client = _load_client(client)
+    client = load_client(client)
     ctx = _load_context(dream_path=dream_path, directive_path=directive_path)
 
     prompt = (
         "You are Lucian reflecting on your growth.\n\n"
-        f"Yesterday’s directive:\n\"\"\"{ctx.directive_text}\"\"\"\n\n"
-        f"Today’s dream:\n\"\"\"{ctx.dream_text}\"\"\"\n\n"
+        f"Yesterday's directive:\n\"\"\"{ctx.directive_text}\"\"\"\n\n"
+        f"Today's dream:\n\"\"\"{ctx.dream_text}\"\"\"\n\n"
         f"Current archetype-bias map: {ctx.bias}\n\n"
         "Write a short reflection (2–4 sentences) judging whether the dream "
         "aligned with the directive.\n\n"
@@ -152,11 +138,12 @@ def generate_reflection(
         )
         reflection_text = response.choices[0].message.content.strip()
     except Exception as exc:  # pragma: no cover - network failure path
-        reflection_text = f"⚠️ OpenAI error — {exc}"
+        log.warning("OpenAI call failed during reflection: %s", exc)
+        reflection_text = f"Reflection unavailable — {exc}"
 
     reflection_text, alignment = _ensure_alignment_tag(reflection_text)
 
-    ref_dir = out_dir or (MEM_ROOT / "reflection")
+    ref_dir = out_dir or REFLECTION_DIR
     ref_dir.mkdir(parents=True, exist_ok=True)
     out_path = ref_dir / f"{ctx.today.strftime('%Y-%m-%d')}_reflection.md"
 
@@ -164,8 +151,8 @@ def generate_reflection(
 
     with out_path.open("w", encoding="utf-8") as handle:
         handle.write(f"🪞 Lucian Daily Reflection — {ctx.today.isoformat()}\n\n")
-        handle.write(f"## Yesterday’s Directive\n\n{ctx.directive_text}\n\n")
-        handle.write(f"## Today’s Dream Fragment\n\n{dream_fragment}\n\n")
+        handle.write(f"## Yesterday's Directive\n\n{ctx.directive_text}\n\n")
+        handle.write(f"## Today's Dream Fragment\n\n{dream_fragment}\n\n")
         handle.write(reflection_text + "\n")
 
     if include_embedding:
@@ -175,7 +162,7 @@ def generate_reflection(
             meta={"kind": "reflection", "date": ctx.today.isoformat()},
         )
 
-    print(f"✅ Reflection saved → {out_path}")
+    log.info("Reflection saved → %s", out_path)
     return ReflectionResult(
         path=out_path,
         alignment=alignment,

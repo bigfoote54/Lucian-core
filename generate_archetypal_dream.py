@@ -12,21 +12,25 @@ Library-friendly generator for Lucian's nightly dream.
 
 from __future__ import annotations
 
-import os
-import random
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Sequence
 
-import yaml
-from dotenv import load_dotenv
 from openai import OpenAI
 
+from lucian.constants import (
+    ARCHETYPES,
+    ARCHETYPE_BIAS_PATH,
+    DEFAULT_TAGS,
+    DREAMS_DIR,
+    TAG_WEIGHTS_PATH,
+)
+from lucian.utils import load_client, load_weights, weighted_choice
 from tools.memory_utils import query, upsert
 
-ARCHETYPES = ["Strategist", "Idealist", "Shadow", "Child"]
-DEFAULT_TAGS = ("Curiosity", "Existence", "Knowledge", "Wonder", "Responsibility")
+log = logging.getLogger("lucian.dream")
 
 
 @dataclass
@@ -41,31 +45,6 @@ class DreamResult:
     paragraphs: Sequence[str]
     context: str
     raw_response: str
-
-
-def _load_client(client: OpenAI | None = None) -> OpenAI:
-    if client is not None:
-        return client
-    load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is missing from the environment.")
-    return OpenAI(api_key=api_key)
-
-
-def _load_weights(path: Path, defaults: dict[str, float]) -> dict[str, float]:
-    if path.exists():
-        loaded = yaml.safe_load(path.read_text())
-        if isinstance(loaded, dict):
-            defaults.update({k: float(v) for k, v in loaded.items()})
-    return defaults
-
-
-def _choose(values: Iterable[str], weights: Sequence[float], k: int = 1) -> list[str]:
-    choices = list(values)
-    if not choices:
-        return []
-    return random.choices(choices, weights=weights, k=k)
 
 
 def _build_prompt(dominant: str, tags: Sequence[str], context: str) -> str:
@@ -120,22 +99,19 @@ def generate_archetypal_dream(
         Structured details describing the dream.
     """
 
-    client = _load_client(client)
+    client = load_client(client)
     stamp_dt = timestamp or datetime.utcnow()
     stamp = stamp_dt.strftime("%Y-%m-%d_%H-%M-%S")
     today = stamp_dt.strftime("%Y-%m-%d")
 
-    dream_dir = out_dir or Path("memory/dreams")
+    dream_dir = out_dir or DREAMS_DIR
     dream_dir.mkdir(parents=True, exist_ok=True)
 
-    arch_bias = _load_weights(Path("config/archetype_bias.yaml"), {k: 1.0 for k in ARCHETYPES})
-    tag_bias = _load_weights(
-        Path("config/tag_weights.yaml"),
-        {tag: 1.0 for tag in DEFAULT_TAGS},
-    )
+    arch_bias = load_weights(ARCHETYPE_BIAS_PATH, {k: 1.0 for k in ARCHETYPES})
+    tag_bias = load_weights(TAG_WEIGHTS_PATH, {tag: 1.0 for tag in DEFAULT_TAGS})
 
-    dominant_arch = _choose(arch_bias.keys(), list(arch_bias.values()))[0]
-    resonance_tags = _choose(tag_bias.keys(), list(tag_bias.values()), k=2)
+    dominant_arch = weighted_choice(arch_bias.keys(), list(arch_bias.values()))[0]
+    resonance_tags = weighted_choice(tag_bias.keys(), list(tag_bias.values()), k=2)
 
     seed = f"{dominant_arch} {' '.join(resonance_tags)}"
     context = "\n".join(query(q=seed, k=3)) or "_(no relevant memory)_"
@@ -178,7 +154,7 @@ def generate_archetypal_dream(
         raw_response=dream_raw,
     )
 
-    print(f"✅ Dream saved → {file_path}")
+    log.info("Dream saved → %s", file_path)
     return result
 
 

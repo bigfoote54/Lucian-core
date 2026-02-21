@@ -8,22 +8,25 @@ Refactored to expose generate_journal_entry() and append_journal_entry().
 
 from __future__ import annotations
 
-import os
+import logging
 import pathlib
 import re
 import textwrap
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
-from dotenv import load_dotenv
 from openai import OpenAI
+
+from lucian.constants import DEFAULT_JOURNAL_MODEL, JOURNAL_DIR as _DEFAULT_JOURNAL_DIR, MOOD_FILE as _DEFAULT_MOOD_FILE
+from lucian.utils import load_client
+
+log = logging.getLogger("lucian.journal")
 
 MAX_WORDS = 180
 MAX_RETRIES = 3
-JOURNAL_DIR = pathlib.Path("memory/journal")
-MOOD_FILE = pathlib.Path("memory/dreams/_latest_mood.txt")
-DEFAULT_MODEL = "gpt-4"
+JOURNAL_DIR = _DEFAULT_JOURNAL_DIR
+MOOD_FILE = _DEFAULT_MOOD_FILE
+DEFAULT_MODEL = DEFAULT_JOURNAL_MODEL
 
 PROMPT = textwrap.dedent(
     """
@@ -49,23 +52,13 @@ class JournalResult:
     timestamp: datetime
 
 
-def _load_client(client: Optional[OpenAI] = None) -> OpenAI:
-    if client is not None:
-        return client
-    load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not found in environment / secrets")
-    return OpenAI(api_key=api_key)
-
-
 def _chat_once(client: OpenAI, model: str) -> str:
     resp = client.chat.completions.create(model=model, messages=[{"role": "user", "content": PROMPT}])
     return resp.choices[0].message.content.strip()
 
 
 def generate_journal_entry(*, client: OpenAI | None = None, model: str | None = None) -> str:
-    client = _load_client(client)
+    client = load_client(client)
     model = model or DEFAULT_MODEL
     entry = ""
     for _ in range(MAX_RETRIES):
@@ -88,14 +81,14 @@ def append_journal_entry(entry: str, *, journal_dir: pathlib.Path | None = None)
     day_path = target_dir / f"{datetime.now():%Y-%m-%d}_journal.md"
 
     if _is_duplicate(day_path, entry):
-        print("⚠️  Entry appears duplicate – skipped.")
+        log.warning("Journal entry appears duplicate – skipped.")
         return None
 
     stamp = datetime.now().isoformat()
     with day_path.open("a", encoding="utf-8") as handle:
         handle.write(f"\n## Entry: {stamp}\n\n{entry}\n")
 
-    print(f"✅ Journal entry appended → {day_path}")
+    log.info("Journal entry appended → %s", day_path)
     return day_path
 
 
@@ -105,9 +98,9 @@ def persist_mood(entry: str, *, mood_path: pathlib.Path | None = None) -> str | 
         path = mood_path or MOOD_FILE
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(first_line, encoding="utf-8")
-        print(f"🪄 Saved mood tag → {path}")
+        log.info("Saved mood tag → %s", path)
         return first_line
-    print("⚠️  No valid mood tag found; skipping mood save.")
+    log.warning("No valid mood tag found; skipping mood save.")
     return None
 
 
@@ -122,4 +115,4 @@ if __name__ == "__main__":
     try:
         run_journal_cycle()
     except Exception as exc:  # pragma: no cover - runtime guard
-        print(f"❌ Exception: {exc}")
+        log.error("Journal cycle failed: %s", exc)

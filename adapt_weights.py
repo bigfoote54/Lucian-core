@@ -10,6 +10,7 @@ Refactored to expose adapt_archetype_weights() for orchestration.
 from __future__ import annotations
 
 import difflib
+import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,13 +18,25 @@ from typing import Mapping
 
 import yaml
 
-ARCH = ["Strategist", "Idealist", "Shadow", "Child"]
-TARGET_SHARE = 1 / len(ARCH)  # ideal 25% each
-MIN_W, MAX_W = 0.3, 3.0  # clip range for weights
+from lucian.constants import (
+    ARCHETYPE_BIAS_PATH,
+    ARCHETYPE_MAX_W,
+    ARCHETYPE_MIN_W,
+    ARCHETYPES,
+    TARGET_ARCHETYPE_SHARE,
+    WEEKLY_DIR,
+)
+from lucian.exceptions import StageError, StageFileNotFound
 
-MEM_ROOT = Path("memory")
-weekly_dir = MEM_ROOT / "weekly"
-bias_path = Path("config/archetype_bias.yaml")
+log = logging.getLogger("lucian.adapt_weights")
+
+ARCH = ARCHETYPES
+TARGET_SHARE = TARGET_ARCHETYPE_SHARE
+MIN_W, MAX_W = ARCHETYPE_MIN_W, ARCHETYPE_MAX_W
+
+MEM_ROOT = WEEKLY_DIR.parent  # kept for compatibility
+weekly_dir = WEEKLY_DIR
+bias_path = ARCHETYPE_BIAS_PATH
 
 
 @dataclass
@@ -51,16 +64,20 @@ def _parse_counts(markdown: str) -> dict[str, int]:
 def adapt_archetype_weights(*, apply: bool = True) -> WeightUpdateResult:
     """
     Compute and optionally persist updated archetype weights.
+
+    The algorithm normalises each archetype's observed frequency against
+    a uniform target share (25 %) and multiplies the current bias weight
+    by the resulting correction factor, clamped to [MIN_W, MAX_W].
     """
 
     report = _latest_weekly_report()
     if not report:
-        raise FileNotFoundError("No weekly reports found; cannot adapt archetype weights.")
+        raise StageFileNotFound("No weekly reports found; cannot adapt archetype weights.")
 
     counts = _parse_counts(report.read_text())
     total = sum(counts.values())
     if total < len(ARCH):
-        raise RuntimeError("Fewer than 4 dreams this week; skipping weight update.")
+        raise StageError("Fewer than 4 dreams this week; skipping weight update.")
 
     bias = {k: 1.0 for k in ARCH}
     if bias_path.exists():
@@ -81,7 +98,7 @@ def adapt_archetype_weights(*, apply: bool = True) -> WeightUpdateResult:
 
     old_yaml = bias_path.read_text() if bias_path.exists() else ""
     if old_yaml == new_yaml:
-        print("No bias change needed.")
+        log.info("No bias change needed.")
         return WeightUpdateResult(weights=bias, path=bias_path, updated=False, source_report=report)
 
     diff = "\n".join(
@@ -94,11 +111,11 @@ def adapt_archetype_weights(*, apply: bool = True) -> WeightUpdateResult:
         )
     )
     if diff:
-        print("Diff:\n" + diff)
+        log.debug("Weight diff:\n%s", diff)
 
     bias_path.parent.mkdir(parents=True, exist_ok=True)
     bias_path.write_text(new_yaml)
-    print(f"✅ Updated archetype weights → {bias_path}")
+    log.info("Updated archetype weights → %s", bias_path)
     return WeightUpdateResult(weights=bias, path=bias_path, updated=True, source_report=report)
 
 

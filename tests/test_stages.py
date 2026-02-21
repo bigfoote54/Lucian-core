@@ -10,6 +10,7 @@ import append_journal
 import generate_archetypal_dream as gad
 import generate_direction as gd
 import generate_output as go
+import lucian.utils as utils
 import reflect as rf
 
 
@@ -27,8 +28,7 @@ class DummyChatClient:
 
 @pytest.fixture(autouse=True)
 def reset_random(monkeypatch):
-    monkeypatch.setattr(gad, "_choose", lambda values, weights, k=1: [list(values)[0]] * k)
-    monkeypatch.setattr(gd, "_choose", lambda values, weights, k=1: [list(values)[0]] * k)
+    monkeypatch.setattr(utils, "weighted_choice", lambda values, weights, k=1: [list(values)[0]] * k)
 
 
 def test_generate_archetypal_dream_writes_structured_dream(tmp_path, monkeypatch):
@@ -57,10 +57,18 @@ def test_generate_archetypal_dream_writes_structured_dream(tmp_path, monkeypatch
 def test_generate_direction_returns_directive(tmp_path, monkeypatch):
     fixed_now = datetime(2025, 1, 3, 9, 0, 0)
     monkeypatch.setattr(gd, "datetime", SimpleNamespace(now=lambda: fixed_now))
-    gd.MEM_ROOT = tmp_path / "memory"
-    dreams_dir = gd.MEM_ROOT / "dreams"
+
+    # Patch the module-level constants that reference DREAMS_DIR / DIRECTION_DIR
+    import lucian.constants as consts
+    monkeypatch.setattr(consts, "DREAMS_DIR", tmp_path / "memory" / "dreams")
+    monkeypatch.setattr(consts, "DIRECTION_DIR", tmp_path / "memory" / "direction")
+    # The generate_direction module imports these at the top level, so also patch its references
+    monkeypatch.setattr(gd, "DREAMS_DIR", tmp_path / "memory" / "dreams")
+    monkeypatch.setattr(gd, "DIRECTION_DIR", tmp_path / "memory" / "direction")
+
+    dreams_dir = tmp_path / "memory" / "dreams"
     dreams_dir.mkdir(parents=True)
-    direction_dir = gd.MEM_ROOT / "direction"
+    direction_dir = tmp_path / "memory" / "direction"
     direction_dir.mkdir(parents=True)
 
     dream_path = dreams_dir / f"{fixed_now.strftime('%Y-%m-%d')}_01-00-00_archetypal_dream.md"
@@ -80,12 +88,19 @@ def test_generate_direction_returns_directive(tmp_path, monkeypatch):
 
 
 def test_generate_reflection_inserts_alignment_when_missing(tmp_path, monkeypatch):
-    rf.MEM_ROOT = tmp_path / "memory"
-    dreams_dir = rf.MEM_ROOT / "dreams"
+    import lucian.constants as consts
+    monkeypatch.setattr(consts, "DREAMS_DIR", tmp_path / "memory" / "dreams")
+    monkeypatch.setattr(consts, "DIRECTION_DIR", tmp_path / "memory" / "direction")
+    monkeypatch.setattr(consts, "REFLECTION_DIR", tmp_path / "memory" / "reflection")
+    monkeypatch.setattr(rf, "DREAMS_DIR", tmp_path / "memory" / "dreams")
+    monkeypatch.setattr(rf, "DIRECTION_DIR", tmp_path / "memory" / "direction")
+    monkeypatch.setattr(rf, "REFLECTION_DIR", tmp_path / "memory" / "reflection")
+
+    dreams_dir = tmp_path / "memory" / "dreams"
     dreams_dir.mkdir(parents=True)
-    direction_dir = rf.MEM_ROOT / "direction"
+    direction_dir = tmp_path / "memory" / "direction"
     direction_dir.mkdir(parents=True)
-    reflection_dir = rf.MEM_ROOT / "reflection"
+    reflection_dir = tmp_path / "memory" / "reflection"
     reflection_dir.mkdir(parents=True)
 
     today = datetime.now()
@@ -134,8 +149,8 @@ def test_adapt_archetype_weights_updates_bias_file(tmp_path):
 
 
 def test_adapt_resonance_weights_writes_tag_bias(tmp_path, monkeypatch):
-    adapt_resonance.MEM_ROOT = tmp_path / "memory"
-    dreams_dir = adapt_resonance.MEM_ROOT / "dreams"
+    monkeypatch.setattr(adapt_resonance, "DREAMS_DIR", tmp_path / "memory" / "dreams")
+    dreams_dir = tmp_path / "memory" / "dreams"
     dreams_dir.mkdir(parents=True, exist_ok=True)
 
     for i in range(4):

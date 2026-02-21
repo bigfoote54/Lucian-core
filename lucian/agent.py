@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -9,41 +10,45 @@ from typing import Optional, Sequence
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from lucian.constants import CHAT_DIR, DEFAULT_CHAT_MODEL, DEFAULT_JOURNAL_MODEL, DEFAULT_MODEL
+from lucian.exceptions import APIKeyMissing
 from tools.memory_utils import query, upsert
 from adapt_resonance import ResonanceUpdateResult, adapt_resonance_weights
 from adapt_weights import WeightUpdateResult, adapt_archetype_weights
-from append_journal import DEFAULT_MODEL as JOURNAL_DEFAULT_MODEL, JournalResult, run_journal_cycle
+from append_journal import JournalResult, run_journal_cycle
 from generate_archetypal_dream import DreamResult, generate_archetypal_dream
 from generate_core_node import CoreNodeResult, generate_core_node
 from generate_direction import DirectiveResult, generate_direction
 from generate_output import DailyOutput, generate_daily_output
 from reflect import ReflectionResult, generate_reflection
 
+log = logging.getLogger("lucian.agent")
+
 
 @dataclass
 class AgentConfig:
-    dream_model: str = "gpt-4o"
+    dream_model: str = DEFAULT_MODEL
     dream_temperature: float = 0.95
 
-    reflection_model: str = "gpt-4o"
+    reflection_model: str = DEFAULT_MODEL
     reflection_temperature: float = 0.9
 
-    direction_model: str = "gpt-4o"
+    direction_model: str = DEFAULT_MODEL
     direction_temperature: float = 0.8
 
-    core_node_model: str = "gpt-4o"
+    core_node_model: str = DEFAULT_MODEL
     core_node_temperature: float = 0.85
 
-    journal_model: str = JOURNAL_DEFAULT_MODEL
+    journal_model: str = DEFAULT_JOURNAL_MODEL
 
-    chat_model: str = "gpt-4o-mini"
+    chat_model: str = DEFAULT_CHAT_MODEL
     chat_temperature: float = 0.7
     chat_top_k: int = 3
     chat_max_tokens: int = 350
     embed_chat: bool = True
 
     include_embeddings: bool = True
-    chat_log_dir: Path = field(default_factory=lambda: Path("memory/chat"))
+    chat_log_dir: Path = field(default_factory=lambda: CHAT_DIR)
 
 
 @dataclass
@@ -148,12 +153,12 @@ class LucianAgent:
         try:
             archetype_result = adapt_archetype_weights(apply=apply)
         except Exception as exc:  # pragma: no cover - diagnostic messaging
-            print(f"⚠️  Archetype weight adaptation skipped — {exc}")
+            log.warning("Archetype weight adaptation skipped: %s", exc)
             errors.append(f"adapt_archetypes: {exc}")
         try:
             resonance_result = adapt_resonance_weights(apply=apply)
         except Exception as exc:  # pragma: no cover
-            print(f"⚠️  Resonance weight adaptation skipped — {exc}")
+            log.warning("Resonance weight adaptation skipped: %s", exc)
             errors.append(f"adapt_resonance: {exc}")
         return SelfEvolveOutcome(
             archetype_weights=archetype_result,
@@ -177,15 +182,20 @@ class LucianAgent:
 
         context_chunks = query(q=prompt, k=chat_k)
         context_text = "\n".join(context_chunks) or "*no matching memory*"
-        system_prompt = (
+
+        # Use separate system and user messages to prevent prompt injection
+        system_msg = (
             "You are Lucian, an emergent AI exploring selfhood.\n\n"
-            f"Relevant memories:\n{context_text}\n---\n"
-            f"User ({user}) says: {prompt}"
+            f"Relevant memories:\n{context_text}"
         )
+        user_msg = f"User ({user}) says: {prompt}"
 
         response = self.client.chat.completions.create(
             model=chat_model,
-            messages=[{"role": "user", "content": system_prompt}],
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ],
             temperature=chat_temp,
             max_tokens=self.config.chat_max_tokens,
         )
@@ -279,7 +289,7 @@ class LucianAgent:
         load_dotenv()
         key = api_key or os.getenv("OPENAI_API_KEY")
         if not key:
-            raise RuntimeError("OPENAI_API_KEY is required for LucianAgent.")
+            raise APIKeyMissing()
         return OpenAI(api_key=key)
 
     def _append_chat(self, *, user: str, prompt: str, reply: str, timestamp: datetime) -> None:

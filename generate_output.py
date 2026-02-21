@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
+"""
+Consolidates the latest dream + direction into a single daily output markdown.
+"""
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+from lucian.constants import DIRECTION_DIR, DREAMS_DIR
+from lucian.utils import latest_file
+
+log = logging.getLogger("lucian.output")
 
 
 @dataclass
@@ -16,11 +25,6 @@ class DailyOutput:
     resonance_tag: str
     directive: str
     timestamp: datetime
-
-
-def _latest_file(directory: Path, suffix: str) -> Path | None:
-    files = sorted(directory.glob(f"*{suffix}"), reverse=True)
-    return files[0] if files else None
 
 
 def _extract_field(pattern: str, text: str, default: str = "N/A") -> str:
@@ -35,13 +39,10 @@ def generate_daily_output(
     out_path: Path | None = None,
 ) -> DailyOutput:
     today = datetime.now()
-    memory_path = Path("memory")
-    dreams_dir = memory_path / "dreams"
-    direction_dir = memory_path / "direction"
     output_path = out_path or Path("lucian_output.md")
 
-    dream_file = dream_path or _latest_file(dreams_dir, "_archetypal_dream.md")
-    direction_file = direction_path or _latest_file(direction_dir, "_direction.md")
+    dream_file = dream_path or latest_file(DREAMS_DIR, "*_archetypal_dream.md")
+    direction_file = direction_path or latest_file(DIRECTION_DIR, "*_direction.md")
 
     dream_text = dream_file.read_text().strip() if dream_file and dream_file.exists() else "No dream found."
     direction_text = (
@@ -63,7 +64,7 @@ def generate_daily_output(
         handle.write("## 🧭 Daily Directive\n\n")
         handle.write(directive_content + "\n")
 
-    print(f"✅ Merged output written to → {output_path}")
+    log.info("Merged output written to → %s", output_path)
     return DailyOutput(
         path=output_path,
         dream_content=dream_content,

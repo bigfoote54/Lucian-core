@@ -2,7 +2,7 @@
 """
 tools/orchestrator.py
 ─────────────────────────────────────────────────────────────────────────────
-Central runner coordinating Lucian’s daily evolution.
+Central runner coordinating Lucian's daily evolution.
 
 Modes
 -----
@@ -13,6 +13,7 @@ Modes
 from __future__ import annotations
 
 import argparse
+import logging
 import subprocess
 import sys
 import time
@@ -21,65 +22,67 @@ from pathlib import Path
 from typing import Iterable, Tuple
 
 from lucian import LucianAgent, AgentConfig
+from lucian.constants import LOG_DIR
 
-# ─── configuration ─────────────────────────────────────────────────────────
-STAGES = [
-    ("💭 dream", "generate_archetypal_dream.py"),
-    ("🪞 reflect", "reflect.py"),
-    ("🧭 direction", "generate_direction.py"),
-    ("⚖️  adapt-weights", "adapt_weights.py"),
-    ("🎚 adapt-tags", "adapt_resonance.py"),
-    ("📓 journal", "append_journal.py"),
-    ("🎬 output", "generate_output.py"),
-    ("🕸 core-node", "generate_core_node.py"),
-]
-
-RETRY_LIMIT = 1
-LOG_DIR = Path("memory/system/logs")
+# ─── logging setup ─────────────────────────────────────────────────────────
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_DIR / f"{datetime.utcnow():%Y-%m-%dT%H-%M-%SZ}_orchestrator.log"
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(name)-24s  %(levelname)-5s  %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+    ],
+)
+log = logging.getLogger("lucian.orchestrator")
 
-# ─── logging helper ────────────────────────────────────────────────────────
-def log(msg: str) -> None:
-    print(msg)
-    if LOG_FILE.exists():
-        content = LOG_FILE.read_text()
-        LOG_FILE.write_text(content + msg + "\n")
-    else:
-        LOG_FILE.write_text(msg + "\n")
+# ─── configuration ─────────────────────────────────────────────────────────
+STAGES = [
+    ("dream", "generate_archetypal_dream.py"),
+    ("reflect", "reflect.py"),
+    ("direction", "generate_direction.py"),
+    ("adapt-weights", "adapt_weights.py"),
+    ("adapt-tags", "adapt_resonance.py"),
+    ("journal", "append_journal.py"),
+    ("output", "generate_output.py"),
+    ("core-node", "generate_core_node.py"),
+]
+
+RETRY_LIMIT = 1
 
 
 # ─── legacy runner ─────────────────────────────────────────────────────────
 def run_stage(label: str, script: str) -> None:
     if not Path(script).exists():
-        log(f"⚠️  {label:12} — skipped (missing {script})")
+        log.warning("%-12s — skipped (missing %s)", label, script)
         return
 
     for attempt in range(RETRY_LIMIT + 1):
         cmd = ["python3", script]
-        log(f"▶️  {label:12} — running: {' '.join(cmd)} (try {attempt + 1})")
+        log.info("%-12s — running: %s (try %d)", label, " ".join(cmd), attempt + 1)
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.stdout:
-            log(res.stdout)
+            log.info(res.stdout)
         if res.returncode == 0:
-            log(f"✅ {label:12} — success\n")
+            log.info("%-12s — success", label)
             return
-        log(f"❌ {label:12} — exit {res.returncode}\n{res.stderr}")
+        log.error("%-12s — exit %d\n%s", label, res.returncode, res.stderr)
         if attempt < RETRY_LIMIT:
             time.sleep(3)
     raise RuntimeError(f"{label} failed after {RETRY_LIMIT + 1} attempts")
 
 
 def run_legacy() -> None:
-    log("🕰  Running legacy stage scripts\n")
+    log.info("Running legacy stage scripts")
     for label, script in STAGES:
         run_stage(label, script)
 
 
 # ─── agent runner ──────────────────────────────────────────────────────────
 def summarise_cycle(agent: LucianAgent, include_core_node: bool, include_journal: bool, include_output: bool, adapt_biases: bool) -> None:
-    log("🧠 Launching LucianAgent daily cycle\n")
+    log.info("Launching LucianAgent daily cycle")
     result = agent.run_daily_cycle(
         include_core_node=include_core_node,
         include_journal=include_journal,
@@ -88,7 +91,7 @@ def summarise_cycle(agent: LucianAgent, include_core_node: bool, include_journal
     )
 
     def stage_status(name: str, obj) -> Tuple[str, str]:
-        return (name, "✅" if obj is not None else "⚪️")
+        return (name, "completed" if obj is not None else "skipped")
 
     status_lines: Iterable[Tuple[str, str]] = [
         stage_status("dream", result.dream),
@@ -104,16 +107,16 @@ def summarise_cycle(agent: LucianAgent, include_core_node: bool, include_journal
     if include_core_node:
         status_lines = list(status_lines) + [stage_status("core_node", result.core_node)]
 
-    log("🔁 Cycle summary:")
+    log.info("Cycle summary:")
     for name, status in status_lines:
-        log(f"  {status} {name}")
+        log.info("  [%s] %s", status, name)
 
     if result.errors:
-        log("\n⚠️  Cycle warnings:")
+        log.warning("Cycle warnings:")
         for err in result.errors:
-            log(f"  • {err}")
+            log.warning("  %s", err)
     else:
-        log("\n🌟 Cycle completed without reported errors.")
+        log.info("Cycle completed without reported errors.")
 
 
 # ─── CLI parsing ───────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ def parse_args() -> argparse.Namespace:
 # ─── main ──────────────────────────────────────────────────────────────────
 def main() -> None:
     args = parse_args()
-    log(f"🛫 Orchestrator started {datetime.utcnow():%Y-%m-%d %H:%M:%S}Z — mode={args.mode}\n")
+    log.info("Orchestrator started %sZ — mode=%s", datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), args.mode)
 
     try:
         if args.mode == "legacy":
@@ -145,10 +148,10 @@ def main() -> None:
                 adapt_biases=not args.skip_adapt,
             )
     except Exception as exc:
-        log(f"🛑 Orchestrator aborted — {exc}")
+        log.error("Orchestrator aborted: %s", exc)
         sys.exit(1)
 
-    log("🏁 Orchestrator finished OK")
+    log.info("Orchestrator finished OK")
     sys.exit(0)
 
 
