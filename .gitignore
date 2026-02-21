@@ -1,4 +1,6 @@
 *.tar.gz
+__pycache__/
+*.pyc
 
 # generated - ignore
 memory/system/logs/
