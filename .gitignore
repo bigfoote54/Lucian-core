@@ -35,3 +35,8 @@ memory/**/logs/*.log
 archive/**
 !memory/system/chroma/
 memory/system/chroma/*.sqlite3
+
+# test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
