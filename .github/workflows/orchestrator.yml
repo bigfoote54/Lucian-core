@@ -19,7 +19,7 @@ jobs:
 
     # ── 1b · Restore previous Chroma DB (optional) ─────────────────────
     - name: ⬇️  Download Chroma DB from last run
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
       with:
         name: chroma-db
         path: memory/system/chroma
