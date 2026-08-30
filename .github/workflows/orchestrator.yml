@@ -1,8 +1,6 @@
 name: 🧠 Lucian Orchestrator
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'
 
 env:
   PYTHON_VERSION: '3.11'
